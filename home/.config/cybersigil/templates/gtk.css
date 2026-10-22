@@ -1,0 +1,26 @@
+/* Cybersigil — GTK3 (adw-gtk3) / GTK4 (libadwaita). Generado por cybersigil-apply */
+@define-color accent_color @@ACCENT_HI@@;
+@define-color accent_bg_color @@ACCENT@@;
+@define-color accent_fg_color @@CHROME_HI@@;
+@define-color destructive_bg_color @@ACCENT@@;
+
+@define-color window_bg_color @@BG_ALT@@;
+@define-color window_fg_color @@TEXT@@;
+@define-color view_bg_color @@BG@@;
+@define-color view_fg_color @@TEXT@@;
+@define-color headerbar_bg_color @@BG@@;
+@define-color headerbar_fg_color @@TEXT@@;
+@define-color headerbar_backdrop_color @@BG@@;
+@define-color headerbar_border_color @@CHROME_DIM@@;
+@define-color sidebar_bg_color @@BG@@;
+@define-color sidebar_fg_color @@TEXT@@;
+@define-color sidebar_backdrop_color @@BG@@;
+@define-color secondary_sidebar_bg_color @@BG_ALT@@;
+@define-color card_bg_color @@SURFACE@@;
+@define-color card_fg_color @@TEXT@@;
+@define-color dialog_bg_color @@SURFACE@@;
+@define-color dialog_fg_color @@TEXT@@;
+@define-color popover_bg_color @@SURFACE@@;
+@define-color popover_fg_color @@TEXT@@;
+@define-color thumbnail_bg_color @@SURFACE@@;
+@define-color borders @@CHROME_DIM@@;

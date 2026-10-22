@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Mide cuánta batería gasta la laptop suspendida.
+
+Uso: suspend-drain   (suspende el equipo; despertalo cuando quieras)
+Para un resultado confiable, dejala suspendida 30 minutos o más, sin el cargador.
+"""
+import os
+import subprocess
+import sys
+import time
+
+BAT = "/sys/class/power_supply/BAT0/"
+
+
+def read(name):
+    with open(BAT + name) as f:
+        return f.read().strip()
+
+
+if read("status") != "Discharging":
+    sys.exit("Desenchufa el cargador: con el cargador conectado la medición no sirve.")
+
+full = int(read("energy_full"))  # µWh
+mode = open("/sys/power/mem_sleep").read().split("[")[1].split("]")[0]
+s0ix_file = "/sys/devices/system/cpu/cpuidle/low_power_idle_system_residency_us"
+s0ix0 = int(open(s0ix_file).read()) if os.path.exists(s0ix_file) else None
+
+e0 = int(read("energy_now"))
+real0, mono0 = time.time(), time.monotonic()
+print(f"Batería: {e0 / full:.0%} · modo de suspensión: {mode}. Suspendiendo…")
+subprocess.run(["systemctl", "suspend"], check=True)
+
+# El reloj real avanza durante la suspensión; el monotónico no. Así se detecta el regreso.
+while (time.time() - real0) - (time.monotonic() - mono0) < 10:
+    time.sleep(1)
+slept = (time.time() - real0) - (time.monotonic() - mono0)
+e1 = int(read("energy_now"))
+
+used_mwh = (e0 - e1) / 1000
+hours = slept / 3600
+print(f"\nSuspendida: {slept / 60:.1f} min")
+print(f"Gastó: {used_mwh:.0f} mWh → {used_mwh / hours:.0f} mW promedio "
+      f"({(e0 - e1) / full / hours:.1%} de la batería por hora)")
+if s0ix0 is not None:
+    s0ix = (int(open(s0ix_file).read()) - s0ix0) / 1e6
+    print(f"Reposo profundo de la plataforma (S0ix): {s0ix:.0f} s de {slept:.0f} s")
+if slept < 25 * 60:
+    print("Aviso: con menos de 30 min la medición es imprecisa (la batería actualiza su lectura cada tanto).")

@@ -1,0 +1,14 @@
+# Nunca subir credenciales
+*.key
+*.pem
+**/gh/hosts.yml
+.env
+
+# Python
+__pycache__/
+
+# Archivos privados de cada máquina (nunca deben entrar al repo)
+.npmrc
+.bashrc.local
+local.sh
+**/cybersigil/generated/

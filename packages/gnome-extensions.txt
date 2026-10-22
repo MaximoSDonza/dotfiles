@@ -1,0 +1,5 @@
+tilingshell@ferrarodomenico.com
+cybersigil-widgets@donza
+just-perfection-desktop@just-perfection
+user-theme@gnome-shell-extensions.gcampax.github.com
+blur-my-shell@aunetx

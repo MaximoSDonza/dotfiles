@@ -1,0 +1,133 @@
+/* Cybersigil Widgets. Generado por cybersigil-apply desde palette.sh */
+
+/* Cristal negro medio transparente; la extensión desenfoca el fondo que hay detrás */
+.csw-panel {
+  background-color: rgba(@@BG_RGB@@, @@WIDGET_ALPHA@@);
+  border: 1px solid rgba(@@CHROME_RGB@@, 0.30);
+  border-radius: 0;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+}
+/* línea roja arriba, de borde a borde (el espaciado entre letras lo pone el JS) */
+.csw-accent { height: 2px; background-color: @@ACCENT_HI@@; }
+.csw-content { padding: 14px 28px 20px 28px; spacing: 6px; }
+
+.csw-ornament { spacing: 12px; }
+.csw-rule { height: 1px; background-color: rgba(@@CHROME_RGB@@, 0.40); }
+.csw-sigil { color: @@ACCENT_HI@@; font-size: 17px; }
+
+/* Encabezado: título gótico + rótulo chico a la derecha */
+.csw-header { spacing: 16px; }
+.csw-title {
+  font-family: "@@FONT_SIGIL@@";
+  font-size: 32px;
+  color: @@CHROME_HI@@;
+}
+.csw-caption {
+  font-family: "Space Grotesk";
+  font-size: 11px;
+  color: @@CHROME@@;
+  padding-bottom: 6px;
+}
+
+/* Texto común */
+.csw-cond {
+  font-family: "Space Grotesk";
+  font-weight: 500;
+  font-size: 14px;
+  color: @@TEXT@@;
+}
+.csw-error { color: @@ACCENT_HI@@; }
+.csw-detail, .csw-range, .csw-updated, .csw-row-name, .csw-row-value, .csw-music-time {
+  font-family: "JetBrainsMono Nerd Font";
+}
+.csw-detail { font-size: 12px; color: @@CHROME@@; }
+.csw-range { spacing: 16px; font-size: 12px; }
+.csw-updated { font-size: 10px; color: rgba(@@CHROME_RGB@@, 0.60); padding-top: 4px; }
+
+/* Barras: el relleno se pone rojo al pasar el umbral */
+.csw-row { spacing: 12px; }
+.csw-row-name { font-size: 11px; color: @@CHROME@@; min-width: 44px; }
+.csw-row-value { font-size: 11px; color: @@TEXT@@; min-width: 104px; text-align: right; }
+.csw-track { height: 4px; min-width: 90px; background-color: rgba(@@CHROME_RGB@@, 0.16); }
+.csw-fill { background-color: @@CHROME_HI@@; }
+.csw-fill.csw-hot { background-color: @@ACCENT_HI@@; }
+
+/* Reloj */
+.csw-time {
+  font-family: "@@FONT_SIGIL@@";
+  font-size: 120px;
+  color: @@CHROME_HI@@;
+  text-shadow: 0 0 24px rgba(@@ACCENT_HI_RGB@@, 0.45);
+}
+.csw-time-row { spacing: 10px; }
+.csw-ampm {
+  font-family: "JetBrainsMono Nerd Font";
+  font-size: 15px;
+  color: @@ACCENT_HI@@;
+  padding-bottom: 30px;
+}
+.csw-date {
+  font-family: "Space Grotesk";
+  font-weight: 500;
+  font-size: 14px;
+  color: @@TEXT@@;
+  padding-top: 6px;
+}
+.csw-sub {
+  font-family: "JetBrainsMono Nerd Font";
+  font-size: 11px;
+  color: @@CHROME@@;
+}
+
+/* Clima */
+.csw-weather { min-width: 300px; }
+.csw-weather-main { spacing: 18px; padding: 4px 0; }
+.csw-weather-icon { icon-size: 60px; color: @@CHROME_HI@@; }
+.csw-temp {
+  font-family: "Space Grotesk";
+  font-weight: 300;
+  font-size: 68px;
+  color: @@CHROME_HI@@;
+  text-shadow: 0 0 20px rgba(@@ACCENT_HI_RGB@@, 0.35);
+}
+.csw-lo { color: @@CHROME@@; }
+.csw-hi { color: @@ACCENT_HI@@; }
+.csw-rain { color: @@CHROME@@; }
+
+/* Sistema */
+.csw-system .csw-content { spacing: 9px; }
+
+/* Red: gráfico de bajada del último minuto */
+.csw-network .csw-content { spacing: 8px; }
+.csw-spark { height: 30px; spacing: 2px; padding-top: 4px; }
+.csw-spark-bar { background-color: rgba(@@CHROME_RGB@@, 0.45); }
+.csw-spark-now { background-color: @@CHROME_HI@@; }
+.csw-spark-busy .csw-spark-now { background-color: @@ACCENT_HI@@; }
+.csw-down { color: @@CHROME_HI@@; min-width: 110px; }
+.csw-up { color: @@ACCENT_HI@@; min-width: 110px; }
+
+/* Música */
+.csw-music { width: 420px; }
+.csw-music-body { spacing: 16px; padding-top: 4px; }
+.csw-art {
+  width: 84px;
+  height: 84px;
+  background-color: rgba(@@CHROME_RGB@@, 0.08);
+  background-size: cover;
+  border: 1px solid rgba(@@CHROME_RGB@@, 0.35);
+}
+.csw-art-sigil { font-size: 34px; color: @@ACCENT_HI@@; }
+.csw-music-info { spacing: 5px; }
+.csw-track-title {
+  font-family: "Space Grotesk";
+  font-weight: 500;
+  font-size: 15px;
+  color: @@CHROME_HI@@;
+}
+.csw-track-artist { font-family: "JetBrainsMono Nerd Font"; font-size: 12px; color: @@CHROME@@; }
+.csw-music-bottom { spacing: 4px; padding-top: 2px; }
+.csw-music-time { font-size: 11px; color: @@CHROME@@; }
+.csw-btn { padding: 4px 6px; border-radius: 0; }
+.csw-btn-icon { icon-size: 16px; color: @@CHROME@@; }
+.csw-btn:hover .csw-btn-icon { color: @@ACCENT_HI@@; }
+.csw-btn:active .csw-btn-icon { color: @@CHROME_HI@@; }

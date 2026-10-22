@@ -1,0 +1,5 @@
+# GNOME Software sin arranque al iniciar sesión (gnome-software.service está enmascarado).
+# Sin SystemdService=, la app se sigue abriendo a demanda desde el menú.
+[D-BUS Service]
+Name=org.gnome.Software
+Exec=/usr/bin/gnome-software --gapplication-service

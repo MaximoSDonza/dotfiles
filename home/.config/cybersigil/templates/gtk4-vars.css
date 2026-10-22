@@ -1,0 +1,19 @@
+
+/* libadwaita ≥1.6 usa variables CSS */
+:root {
+  --accent-color: @@ACCENT_HI@@;
+  --accent-bg-color: @@ACCENT@@;
+  --accent-fg-color: @@CHROME_HI@@;
+  --window-bg-color: @@BG_ALT@@;
+  --window-fg-color: @@TEXT@@;
+  --view-bg-color: @@BG@@;
+  --view-fg-color: @@TEXT@@;
+  --headerbar-bg-color: @@BG@@;
+  --headerbar-backdrop-color: @@BG@@;
+  --sidebar-bg-color: @@BG@@;
+  --sidebar-backdrop-color: @@BG@@;
+  --card-bg-color: @@SURFACE@@;
+  --dialog-bg-color: @@SURFACE@@;
+  --popover-bg-color: @@SURFACE@@;
+  --border-color: @@CHROME_DIM@@;
+}

@@ -1,0 +1,32 @@
+# Cybersigil — starship
+add_newline = true
+format = """
+[⸸ ](fg:@@ACCENT_HI@@)$username[@](fg:@@CHROME_DIM@@)$hostname $directory$git_branch$git_status$cmd_duration
+$character"""
+
+[username]
+show_always = true
+format = "[$user](fg:@@CHROME_HI@@)"
+
+[hostname]
+ssh_only = false
+format = "[$hostname](fg:@@CHROME@@)"
+
+[directory]
+format = "[ ᛟ ](fg:@@CHROME_DIM@@)[$path](bold fg:@@TEXT@@)[$read_only](fg:@@ACCENT_HI@@)"
+truncation_length = 4
+read_only = " ✠"
+
+[git_branch]
+format = "[ ⟡ ](fg:@@CHROME_DIM@@)[$branch](fg:@@CHROME@@)"
+
+[git_status]
+format = "[ $all_status$ahead_behind](fg:@@ACCENT_HI@@)"
+
+[cmd_duration]
+min_time = 2000
+format = "[ ⧗ $duration](fg:@@CHROME_DIM@@)"
+
+[character]
+success_symbol = "[ ╰─⛧](fg:@@CHROME@@)"
+error_symbol = "[ ╰─⛧](fg:@@ACCENT_HI@@)"

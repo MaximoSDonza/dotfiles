@@ -1,0 +1,101 @@
+/* Cybersigil — GNOME Shell. Generado desde templates/ por cybersigil-apply; no editar en ~/.themes */
+@import url("resource:///org/gnome/shell/theme/gnome-shell-dark.css");
+
+stage { font-family: "Space Grotesk", sans-serif; color: @@TEXT@@; }
+
+/* ── Panel ─────────────────────────────────────────── */
+#panel {
+  background-color: @@BG@@;
+  border-bottom: 1px solid @@CHROME_DIM@@;
+  font-weight: 500;
+  letter-spacing: 0.5px; }
+#panel .panel-button {
+  border-radius: 0;
+  color: @@TEXT@@; }
+#panel .panel-button:hover, #panel .panel-button:focus {
+  box-shadow: inset 0 -2px 0 0 @@CHROME@@; }
+#panel .panel-button:active, #panel .panel-button:checked {
+  box-shadow: inset 0 -2px 0 0 @@ACCENT_HI@@;
+  color: @@CHROME_HI@@; }
+#panel .panel-button#panelActivities .workspace-dot {
+  border-radius: 0;
+  background-color: @@CHROME@@; }
+#panel .panel-button .clock {
+  font-family: "@@FONT_SIGIL@@";
+  font-weight: normal;
+  font-size: 1.25em;
+  color: @@CHROME_HI@@; }
+
+/* ── Menús y popups ────────────────────────────────── */
+/* Fondos en cristal oscuro: Blur my Shell desenfoca lo que hay detrás */
+.popup-menu-content, .candidate-popup-content, .quick-settings, .modal-dialog,
+.switcher-list, .workspace-switcher, .osd-window, .resize-popup, .app-folder-dialog,
+.screenshot-ui-panel {
+  background-color: @@GLASS@@;
+  border: 1px solid @@CHROME_DIM@@;
+  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); }
+.popup-sub-menu { background-color: @@GLASS_CARD@@; border-radius: 0; }
+.datemenu-popover { border-radius: 0; }
+.calendar, .datemenu-today-button, .events-button, .world-clocks-button,
+.weather-button, .quick-toggle-menu {
+  background-color: @@GLASS_CARD@@;
+  border: 1px solid rgba(@@CHROME_RGB@@, 0.12); }
+.datemenu-today-button:hover, .events-button:hover, .world-clocks-button:hover,
+.weather-button:hover { background-color: @@GLASS_HOVER@@; }
+.popup-menu-item, .quick-toggle, .quick-toggle-has-menu, .quick-toggle-menu,
+.icon-button, .button, .message, .notification-banner, .calendar, .events-button,
+.world-clocks-button, .weather-button, .switcher-list .item-box, .search-entry,
+.overview-tile, .grid-search-result, .list-search-result, .dash-item-container > StButton,
+.workspace-thumbnail, .window-caption, .modal-dialog-button, .modal-dialog .modal-dialog-button-box,
+.quick-slider .slider, .keyboard-key, .screenshot-ui-panel {
+  border-radius: 0; }
+.popup-menu-item:hover, .popup-menu-item:focus { background-color: @@GLASS_HOVER@@; }
+.popup-separator-menu-item .popup-separator-menu-item-separator { background-color: @@CHROME_DIM@@; }
+
+.quick-toggle { background-color: @@GLASS_CARD@@; color: @@TEXT@@; }
+.quick-toggle:hover { background-color: @@GLASS_HOVER@@; }
+.quick-toggle:checked, .quick-toggle-has-menu:checked .quick-toggle,
+.quick-toggle-has-menu:checked .quick-toggle-menu-button {
+  background-color: @@ACCENT@@; color: @@CHROME_HI@@; }
+.quick-toggle:checked:hover { background-color: @@ACCENT_HI@@; }
+.slider { -barlevel-active-background-color: @@CHROME@@; -barlevel-background-color: @@CHROME_DIM@@; }
+
+/* ── Notificaciones / calendario ───────────────────── */
+.message { background-color: @@GLASS_CARD@@; border: 1px solid @@CHROME_DIM@@; }
+.message:hover { background-color: @@GLASS_HOVER@@; }
+.message:second-in-stack, .message:lower-in-stack { background-color: @@GLASS@@; }
+.calendar .calendar-today, .calendar .calendar-today:selected {
+  background-color: @@ACCENT@@; color: @@CHROME_HI@@; border-radius: 0; }
+.calendar .calendar-day { border-radius: 0; }
+.datemenu-today-button .date-label { font-family: "@@FONT_SIGIL@@"; font-weight: normal; }
+
+/* ── Vista general ─────────────────────────────────── */
+#dash .dash-background {
+  background-color: rgba(0, 0, 0, 0.75);
+  border: 1px solid @@CHROME_DIM@@;
+  border-radius: 0; }
+.search-entry {
+  background-color: @@SURFACE@@;
+  border: 1px solid @@CHROME_DIM@@;
+  color: @@TEXT@@; }
+.search-entry:focus { border-color: @@CHROME@@; }
+.workspace-background { border-radius: 0; box-shadow: 0 0 0 1px @@CHROME_DIM@@; }
+.window-caption { background-color: @@BG@@; border: 1px solid @@CHROME_DIM@@; }
+.app-well-app:hover .overview-icon, .grid-search-result:hover .overview-icon,
+.overview-tile:hover { background-color: rgba(@@CHROME_RGB@@, 0.12); }
+.app-well-app.app-folder { background-color: @@SURFACE@@; border-radius: 0; }
+
+/* ── Pantalla de bloqueo ───────────────────────────── */
+#lockDialogGroup { background-color: @@BG@@; }
+.unlock-dialog-clock { color: @@CHROME_HI@@; }
+.unlock-dialog-clock .unlock-dialog-clock-time {
+  font-family: "@@FONT_SIGIL@@";
+  font-weight: normal;
+  font-size: 8em; }
+.unlock-dialog-clock .unlock-dialog-clock-date { letter-spacing: 4px; color: @@CHROME@@; }
+.unlock-dialog-clock .unlock-dialog-clock-hint { border-radius: 0; }
+.login-dialog-prompt-entry, .unlock-dialog StEntry {
+  border-radius: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  border: 1px solid @@CHROME@@; }

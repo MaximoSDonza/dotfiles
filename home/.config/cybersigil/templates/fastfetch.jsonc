@@ -1,0 +1,25 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "source": "~/.config/fastfetch/sigil.txt",
+    "color": { "1": "38;2;@@CHROME_ANSI@@", "2": "38;2;@@ACCENT_HI_ANSI@@" },
+    "padding": { "right": 3 }
+  },
+  "display": {
+    "separator": "  ",
+    "color": { "keys": "38;2;@@CHROME_ANSI@@", "title": "38;2;@@CHROME_HI_ANSI@@" }
+  },
+  "modules": [
+    "title",
+    { "type": "custom", "format": "\u001b[38;2;@@CHROME_DIM_ANSI@@m──────────────⸸──────────────" },
+    { "type": "os", "key": "✠ os" },
+    { "type": "kernel", "key": "✠ kernel" },
+    { "type": "wm", "key": "✠ wm" },
+    { "type": "shell", "key": "✠ shell" },
+    { "type": "terminal", "key": "✠ term" },
+    { "type": "cpu", "key": "✠ cpu" },
+    { "type": "memory", "key": "✠ mem" },
+    { "type": "uptime", "key": "✠ uptime" },
+    { "type": "colors", "symbol": "block" }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "uuid": "cybersigil-widgets@donza",
+  "name": "Cybersigil Widgets",
+  "description": "Reloj grande y clima sobre el fondo de escritorio, con el tema Cybersigil. Estilos y ciudad: ~/.config/cybersigil/palette.sh",
+  "shell-version": ["51"],
+  "version": 1
+}

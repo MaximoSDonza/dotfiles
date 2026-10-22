@@ -1,0 +1,9 @@
+[Unit]
+Description=Aviso de actualizaciones de IDEs de JetBrains (Toolbox no corre en segundo plano)
+After=graphical-session.target
+
+[Service]
+# queda esperando mientras la notificación está abierta (sin consumir CPU)
+Type=exec
+ExecStart=%h/.local/bin/jetbrains-update-check
+Nice=10

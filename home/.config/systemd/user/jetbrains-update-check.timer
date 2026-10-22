@@ -1,0 +1,10 @@
+[Unit]
+Description=Revisa una vez por día si hay versiones nuevas de los IDEs de JetBrains
+
+[Timer]
+OnStartupSec=3min
+OnUnitActiveSec=1d
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target
