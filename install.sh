@@ -77,9 +77,9 @@ echo "==> Tema Cybersigil"
 
 cat <<EOF
 
-Listo. Pasos que requieren sudo/AUR (ver README):
-  sudo pacman -S --needed - < $DOT/packages/pacman.txt
-  yay -S --needed - < $DOT/packages/aur.txt
-  sudo bash ~/.config/cybersigil/system-tune.sh
-Luego cierra sesión y vuelve a entrar.
+Listo. Si todavía no los ejecutaste (ver README):
+  sudo pacman -S --needed - < $DOT/packages/base.txt
+  yay -S --needed - < $DOT/packages/aur-base.txt
+  sudo bash ~/.config/cybersigil/system-tune.sh     # detecta el hardware; deshacer: --revert
+Luego cierra sesión y vuelve a entrar. Para desinstalar: $DOT/uninstall.sh
 EOF

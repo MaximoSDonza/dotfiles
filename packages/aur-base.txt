@@ -1,0 +1,3 @@
+bibata-cursor-theme-bin
+nautilus-open-any-terminal
+papirus-folders

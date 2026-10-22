@@ -35,9 +35,16 @@ for p in "${PATHS[@]}"; do
   printf '%s\n' "$out" > "$DOT/dconf/$(tr '/' '+' <<<"$p").ini"
 done
 
+# Paquetes. base.txt y aur-base.txt se mantienen a mano: lo que necesita el tema.
+# apps.txt y aur-apps.txt se generan: lo instalado a mano que no está en base, ni en el grupo
+# "gnome", ni en exclude.txt (sistema, hardware, restos de KDE y Hyprland)
 mkdir -p "$DOT/packages"
-pacman -Qqen > "$DOT/packages/pacman.txt"             # instalados explícitamente, repos oficiales
-pacman -Qqem > "$DOT/packages/aur.txt" || true        # AUR / externos (falla si no hay ninguno)
+skip=$(mktemp)
+{ cat "$DOT/packages/base.txt" "$DOT/packages/aur-base.txt"; pacman -Sgq gnome 2>/dev/null || true; } > "$skip"
+apps() { grep -vxFf "$skip" | grep -vEf <(grep -vE '^(#|$)' "$DOT/packages/exclude.txt") || true; }
+pacman -Qqen | apps > "$DOT/packages/apps.txt"        # repos oficiales
+pacman -Qqem | apps > "$DOT/packages/aur-apps.txt"    # AUR
+rm -f "$skip" "$DOT/packages/pacman.txt" "$DOT/packages/aur.txt"  # listas viejas, sin clasificar
 gnome-extensions list --user > "$DOT/packages/gnome-extensions.txt"
 
 echo "Respaldo actualizado. Revisa con: git -C $DOT status"

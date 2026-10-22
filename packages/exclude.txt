@@ -1,0 +1,23 @@
+# Paquetes que backup.sh NO pone en apps.txt / aur-apps.txt (expresiones regulares, una por línea).
+# Tampoco entran los de base.txt, aur-base.txt ni los del grupo "gnome" (requisito del README).
+
+# Sistema y arranque: cada instalación de Arch elige los suyos
+^(base|base-devel|sudo|mkinitcpio|plymouth|grub|efibootmgr|os-prober|systemd-boot.*)$
+^linux(-zen|-lts|-hardened|-rt)?(-headers)?$
+^(linux-firmware.*|sof-firmware)$
+^(networkmanager|wpa_supplicant|iwd|bluez|bluez-utils|power-profiles-daemon)$
+^(pipewire.*|wireplumber|libpulse|gst-plugin-pipewire)$
+^(xdg-utils|xdg-user-dirs-gtk|gnome-keyring)$
+
+# Hardware: los instala system-tune.sh según el procesador, la gráfica y el WiFi de cada equipo
+^(intel|amd)-ucode$
+^(intel-media-driver|libva-intel-driver|vulkan-intel|vulkan-radeon|thermald|nvidia.*)$
+^(wireless-regdb|iw|rtkit|pacman-contrib|zram-generator)$
+
+# Restos de KDE y Hyprland: este setup es GNOME y no los necesita
+^(sddm|dolphin|baloo.*|kwindowsystem|kio.*|plasma-.*|polkit-kde-agent|dunst)$
+^(hyprland.*|xdg-desktop-portal-hyprland|uwsm|wofi|grim|slurp|network-manager-applet)$
+
+# AUR: el propio yay y los paquetes de depuración
+^yay(-bin)?$
+-debug$

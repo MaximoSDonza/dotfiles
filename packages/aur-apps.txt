@@ -1,0 +1,5 @@
+brave-bin
+debtap
+jetbrains-toolbox
+postman-bin
+visual-studio-code-bin

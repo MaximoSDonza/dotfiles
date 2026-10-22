@@ -8,8 +8,19 @@ set -a; . "$DIR/palette.sh"
 set +a
 EXT="$HOME/.local/share/gnome-shell/extensions"
 
+# Un archivo propio del usuario (no generado acá: sin la marca "Cybersigil") se guarda antes de
+# reemplazarlo; uninstall.sh lo restaura
+BACKUP="$HOME/.dotfiles-backup/$(date +%F_%H%M%S)"
+protect() {
+  [[ -f $1 && ! -L $1 ]] && ! grep -q "Cybersigil" "$1" || return 0
+  mkdir -p "$(dirname "$BACKUP/${1#"$HOME"/}")"
+  cp -a "$1" "$BACKUP/${1#"$HOME"/}"
+  echo "  tu ${1/#"$HOME"/\~} anterior quedó en ${BACKUP/#"$HOME"/\~}"
+}
+
 render() {  # render <plantilla> <destino>
   mkdir -p "$(dirname "$2")"
+  protect "$2"
   subst "$1" > "$2"
 }
 # Tokens de las plantillas. Cada color existe en tres formatos:
@@ -33,6 +44,7 @@ render gnome-shell.css "$HOME/.themes/Cybersigil/gnome-shell/gnome-shell.css"
 render gtk.css "$HOME/.config/gtk-3.0/gtk.css"
 # GTK4 además usa variables CSS (:root), que GTK3 no entiende
 mkdir -p "$HOME/.config/gtk-4.0"
+protect "$HOME/.config/gtk-4.0/gtk.css"
 { subst gtk.css; subst gtk4-vars.css; } > "$HOME/.config/gtk-4.0/gtk.css"
 render kitty-theme.conf "$HOME/.config/kitty/cybersigil.conf"
 render starship.toml "$HOME/.config/starship.toml"
@@ -58,6 +70,7 @@ fi
 
 WP="$HOME/.local/share/backgrounds/cybersigil.svg"
 mkdir -p "$(dirname "$WP")"
+protect "$WP"
 python3 "$DIR/templates/wallpaper.py" 3072 1728 > "$WP"
 
 # GNOME
@@ -76,27 +89,30 @@ gs org.gnome.desktop.background picture-options zoom
 gs org.gnome.desktop.background primary-color "$BG"
 gs org.gnome.desktop.screensaver picture-uri "file://$WP"
 
-# Extensiones
-gsettings --schemadir "$EXT/user-theme@gnome-shell-extensions.gcampax.github.com/schemas" \
-  set org.gnome.shell.extensions.user-theme name Cybersigil
+# Extensiones: cada bloque solo si la extensión está instalada (puede no haber versión para
+# la GNOME de otro equipo)
+UT="$EXT/user-theme@gnome-shell-extensions.gcampax.github.com"
+[[ -d $UT ]] && gsettings --schemadir "$UT/schemas" set org.gnome.shell.extensions.user-theme name Cybersigil
 B="gsettings --schemadir $EXT/blur-my-shell@aunetx/schemas set org.gnome.shell.extensions.blur-my-shell"
-$B.panel blur false          # panel negro puro
-$B.overview blur true
-$B.lockscreen blur true
-$B.applications blur false   # sin blur en ventanas (rendimiento)
-# Menús/calendario/ajustes rápidos: blur dinámico detrás del cristal del tema
-$B.popup blur true
-$B.popup static-blur false
-$B.popup override-background false   # el color del cristal lo pone nuestro CSS (GLASS)
-$B.popup preserve-shell-theme true
-$B.popup sigma "$BLUR_SIGMA"
-$B.popup brightness "$BLUR_BRIGHTNESS"
-$B.popup rounded-corners 3           # esquinas rectas, como el tema
-for k in corner-radius menu-corner-radius submenu-corner-radius calendar-corner-radius \
-         quick-settings-corner-radius notification-corner-radius dialog-corner-radius \
-         osd-corner-radius osd-window-corner-radius resize-popup-corner-radius candidate-corner-radius; do
-  $B.popup "$k" 0
-done
+if [[ -d $EXT/blur-my-shell@aunetx ]]; then
+  $B.panel blur false          # panel negro puro
+  $B.overview blur true
+  $B.lockscreen blur true
+  $B.applications blur false   # sin blur en ventanas (rendimiento)
+  # Menús/calendario/ajustes rápidos: blur dinámico detrás del cristal del tema
+  $B.popup blur true
+  $B.popup static-blur false
+  $B.popup override-background false   # el color del cristal lo pone nuestro CSS (GLASS)
+  $B.popup preserve-shell-theme true
+  $B.popup sigma "$BLUR_SIGMA"
+  $B.popup brightness "$BLUR_BRIGHTNESS"
+  $B.popup rounded-corners 3           # esquinas rectas, como el tema
+  for k in corner-radius menu-corner-radius submenu-corner-radius calendar-corner-radius \
+           quick-settings-corner-radius notification-corner-radius dialog-corner-radius \
+           osd-corner-radius osd-window-corner-radius resize-popup-corner-radius candidate-corner-radius; do
+    $B.popup "$k" 0
+  done
+fi
 
 # Tiling Shell: mosaico
 T="gsettings --schemadir $EXT/tilingshell@ferrarodomenico.com/schemas set org.gnome.shell.extensions.tilingshell"

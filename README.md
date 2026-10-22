@@ -71,38 +71,87 @@ home/            → se enlaza tal cual dentro de ~ (misma estructura que $HOME)
   .config/cybersigil/   palette.sh, apply.sh, system-tune.sh y plantillas
 firefox/user.js  → Firefox sin telemetría
 dconf/           → ajustes de GNOME y de las extensiones
-packages/        → paquetes de pacman, AUR y extensiones de GNOME
-fonts/           → fuentes que no están en los repos
+packages/        → listas de paquetes (ver "Paquetes")
+fonts/           → fuentes que no están en los repos, con su licencia OFL
 plantillas/      → plantillas de Nautilus (clic derecho → Nuevo documento); se copian, no se enlazan
 assets/          → imágenes del README
-install.sh       → instala todo
-backup.sh        → actualiza dconf/ y packages/
+install.sh       → instala todo para tu usuario
+uninstall.sh     → lo desinstala y deja GNOME como estaba
+backup.sh        → actualiza dconf/ y las listas de aplicaciones de packages/
 ```
+
+## Requisitos
+
+| | |
+|---|---|
+| **Sistema** | Arch Linux o una derivada que use `pacman` (EndeavourOS, CachyOS…) |
+| **Escritorio** | GNOME **51** en Wayland (grupo `gnome`). El tema de GNOME Shell y la extensión de widgets están hechos para esa versión; en otra pueden verse mal o desactivarse |
+| **AUR** | `yay` u otro ayudante de AUR, para `aur-base.txt` |
+| **Permisos** | un usuario con `sudo` |
+| **Red** | conexión a internet: las extensiones se descargan de extensions.gnome.org y el clima es de Open-Meteo |
+| **Hardware** | cualquier PC o laptop. `system-tune.sh` detecta el procesador (Intel/AMD), la gráfica (Intel/AMD; con NVIDIA avisa y el driver lo eliges tú) y el chip WiFi, y aplica solo lo que corresponde |
+| **Pantalla** | los widgets se ubican en el monitor principal |
 
 ## Instalación
 
 ```bash
+sudo pacman -S --needed gnome                    # si todavía no tienes GNOME
 git clone https://github.com/MaximoSDonza/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
-sudo pacman -S --needed - < packages/pacman.txt
-yay -S --needed - < packages/aur.txt
+sudo pacman -S --needed - < packages/base.txt    # lo que necesita el tema
+yay -S --needed - < packages/aur-base.txt
 ./install.sh
-sudo bash ~/.config/cybersigil/system-tune.sh   # WiFi, zram, thermald, GDM...
+
+# Opcional: ajustes de sistema según tu hardware (ver abajo)
+echo 'WIFI_REGDOM="AR"' >> ~/.config/cybersigil/local.sh   # código de tu país, para el WiFi
+sudo bash ~/.config/cybersigil/system-tune.sh
+
+# Opcional: mis aplicaciones
+sudo pacman -S --needed - < packages/apps.txt
+yay -S --needed - < packages/aur-apps.txt
 ```
 
-Cierra sesión y vuelve a entrar. Los archivos que ya existían se mueven a `~/.dotfiles-backup/`.
+Cierra sesión y vuelve a entrar. Los archivos que ya existían se mueven a `~/.dotfiles-backup/`
+(también los que reemplaza `cybersigil-apply`, como un `starship.toml` propio).
+
+## Paquetes
+
+| Lista | Contenido | Se mantiene |
+|---|---|---|
+| `base.txt` / `aur-base.txt` | lo que necesita el tema: kitty, starship, fzf, btop, fuentes, iconos, cursor… | a mano |
+| `apps.txt` / `aur-apps.txt` | mis aplicaciones (Brave, VS Code, Docker, Steam…). Opcionales | solas, con `backup.sh` |
+| `exclude.txt` | lo que nunca entra en las listas de apps: kernel, firmware, drivers (los pone `system-tune.sh` según el equipo) y restos de KDE/Hyprland | a mano |
+| `gnome-extensions.txt` | extensiones que descarga `install.sh` | solas, con `backup.sh` |
+
+## Desinstalación
+
+```bash
+~/dotfiles/uninstall.sh
+sudo bash ~/dotfiles/home/.config/cybersigil/system-tune.sh --revert   # si ejecutaste system-tune.sh
+```
+
+`uninstall.sh` quita los enlaces y restaura los archivos que había antes, borra lo que generó el tema,
+desactiva las extensiones, devuelve GNOME a sus valores por defecto y reactiva los servicios que se habían
+apagado. Antes guarda tus ajustes de GNOME en `~/.dotfiles-backup/antes-de-desinstalar-*/dconf.ini`.
+No desinstala paquetes.
 
 ## Ajustes de sistema (`system-tune.sh`)
 
-- WiFi MediaTek MT7902: sin ahorro de energía ni ASPM, dominio regulatorio AR
-- TCP BBR + fq
-- zram = RAM/2 con parámetros de memoria para zram
-- thermald, rtkit (prioridad en tiempo real para el dibujado y el audio), limpieza semanal de la caché de pacman
-- xdg-terminal-exec: kitty como terminal de las apps del menú
-- GDM (necesario para bloquear con Super+L)
+Detecta el hardware y aplica solo lo que corresponde a cada equipo:
 
-Cada cambio se puede revertir con los comandos del final del script.
+| Ajuste | Cuándo |
+|---|---|
+| Región WiFi (canales y potencia legales del país) | si `WIFI_REGDOM` está en `~/.config/cybersigil/local.sh` |
+| Sin ahorro de energía del WiFi ni ASPM (evita pérdida de paquetes) | chips MediaTek `mt7921e` (MT7921/7922/7902) o `mt7925e` |
+| `intel-ucode` + `thermald` (control térmico) / `amd-ucode` | según el procesador |
+| `intel-media-driver` + `vulkan-intel` / `vulkan-radeon` | según la gráfica (NVIDIA: solo avisa) |
+| TCP BBR + fq, zram = RAM/2 con sus parámetros de memoria, `rtkit`, limpieza semanal de la caché de pacman | siempre |
+| GDM como gestor de inicio de sesión (necesario para bloquear con Super+L) | si usas otro |
+
+Antes de modificar un archivo de `/etc` guarda el original en `/var/lib/cybersigil/`, y anota lo que crea o
+activa. Se puede ejecutar varias veces, y `sudo bash system-tune.sh --revert` deja todo como estaba
+(no desinstala paquetes).
 
 ## Atajos
 
@@ -132,7 +181,7 @@ En kitty, `ssh` es `kitten ssh`: la primera vez copia al servidor la definición
 
 ## Privacidad
 
-Lo privado de cada máquina queda fuera del repo: `~/.config/cybersigil/local.sh` (ciudad), `~/.bashrc.local`
+Lo privado de cada máquina queda fuera del repo: `~/.config/cybersigil/local.sh` (ciudad y región WiFi), `~/.bashrc.local`
 (variables secretas) y `~/.npmrc` (token de npm). Un hook de git (`.githooks/pre-commit`) frena commits
 con tokens, claves o esos archivos.
 
@@ -141,11 +190,17 @@ Telemetría desactivada en VS Code, Firefox y CLIs de desarrollo (`gh`, Next.js,
 
 ## Mantener el respaldo
 
+`backup.sh` actualiza los ajustes de GNOME y las listas de aplicaciones antes de cada commit:
+
 ```bash
 cd ~/dotfiles && ./backup.sh && git add -A && git commit -m "update" && git push
 ```
 
-## Créditos
+## Licencia
 
-Fuentes bajo licencia [OFL](https://openfontlicense.org) (texto en `fonts/`): Space Grotesk, UnifrakturMaguntia.
-Extensiones de [extensions.gnome.org](https://extensions.gnome.org).
+[MIT](LICENSE): puedes usar, modificar y redistribuir estos dotfiles, manteniendo el aviso de copyright.
+Excepciones: las fuentes de `fonts/` tienen su propia licencia [OFL](https://openfontlicense.org)
+(Space Grotesk, UnifrakturMaguntia; texto en `fonts/`), y las extensiones que descarga `install.sh`
+tienen las de sus autores.
+
+Extensiones de terceros: [extensions.gnome.org](https://extensions.gnome.org).

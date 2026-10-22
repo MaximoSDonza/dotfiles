@@ -65,7 +65,8 @@ def half():
 def main():
     cx, cy = W / 2, H / 2
     paths = "\n".join(f'    <path d="{d}"/>' for d in half())
-    print(f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
+    print(f'''<!-- Cybersigil: fondo generado por cybersigil-apply desde palette.sh -->
+<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
   <defs>
     <linearGradient id="chrome" x1="0" y1="0" x2="0.35" y2="1">
       <stop offset="0" stop-color="{C['CHROME_HI']}"/>
