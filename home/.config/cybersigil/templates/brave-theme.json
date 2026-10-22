@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Cybersigil",
+  "version": "1.0",
+  "description": "Cybersigil — tema de Brave/Chromium generado por cybersigil-apply desde palette.sh",
+  "theme": {
+    "colors": {
+      "frame": [@@BG_RGB@@],
+      "frame_inactive": [@@BG_ALT_RGB@@],
+      "frame_incognito": [@@BG_RGB@@],
+      "frame_incognito_inactive": [@@BG_ALT_RGB@@],
+      "background_tab": [@@BG_RGB@@],
+      "background_tab_inactive": [@@BG_ALT_RGB@@],
+      "background_tab_text": [@@CHROME_RGB@@],
+      "background_tab_text_inactive": [@@CHROME_DIM_RGB@@],
+      "toolbar": [@@SURFACE_RGB@@],
+      "toolbar_text": [@@TEXT_RGB@@],
+      "toolbar_button_icon": [@@CHROME_RGB@@],
+      "tab_text": [@@CHROME_HI_RGB@@],
+      "bookmark_text": [@@TEXT_RGB@@],
+      "omnibox_background": [@@BG_RGB@@],
+      "omnibox_text": [@@TEXT_RGB@@],
+      "ntp_background": [@@BG_RGB@@],
+      "ntp_text": [@@TEXT_RGB@@],
+      "ntp_link": [@@ACCENT_SOFT_RGB@@],
+      "ntp_header": [@@ACCENT_HI_RGB@@]
+    },
+    "tints": {
+      "buttons": [0, 0, 0.75]
+    },
+    "properties": {
+      "ntp_background_alignment": "center"
+    }
+  }
+}

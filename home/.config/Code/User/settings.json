@@ -8,6 +8,9 @@
 
   // "Abrir en terminal externa" usa kitty
   "terminal.external.linuxExec": "kitty",
+
+  // Tema generado por cybersigil-apply desde palette.sh (extensión cybersigil.cybersigil-theme)
+  "workbench.colorTheme": "Cybersigil",
   "editor.minimap.renderCharacters": false,
   "editor.minimap.enabled": false
 }

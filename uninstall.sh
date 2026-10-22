@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Desinstala estos dotfiles de tu usuario y deja GNOME como estaba:
 #   - quita los enlaces a este repo y restaura los archivos que había antes (~/.dotfiles-backup)
-#   - borra lo que generó cybersigil-apply (tema, fondo, estilos) solo si lleva su marca
+#   - borra lo que generó cybersigil-apply (tema, fondo, estilos) solo si lleva su marca,
+#     y los temas de VS Code e IntelliJ
 #   - desactiva las extensiones y vuelve a los valores por defecto los ajustes que cambió el tema
 #   - reactiva los servicios que se habían desactivado
-# No toca los paquetes instalados ni los ajustes de sistema; esos se revierten con:
+# No toca los paquetes instalados ni lo que se instaló con sudo; eso se revierte con:
 #   sudo bash <repo>/home/.config/cybersigil/system-tune.sh --revert
+#   sudo bash <repo>/home/.config/cybersigil/gdm-theme.sh --revert
+#   sudo bash <repo>/home/.config/cybersigil/boot-theme.sh --revert
 #
 # Uso: ./uninstall.sh [--yes]
 set -euo pipefail
@@ -46,13 +49,21 @@ done
 
 echo "==> Archivos generados por cybersigil-apply"
 for f in "$HOME/.config/gtk-3.0/gtk.css" "$HOME/.config/gtk-4.0/gtk.css" "$HOME/.config/kitty/cybersigil.conf" \
-         "$HOME/.config/starship.toml" "$HOME/.config/fastfetch/config.jsonc" \
+         "$HOME/.config/starship.toml" "$HOME/.config/fastfetch/config.jsonc" "$HOME/.config/nvim/colors/cybersigil.lua" \
          "$HOME/.config/btop/themes/cybersigil.theme" "$HOME/.local/share/backgrounds/cybersigil.svg" \
          "$EXT/cybersigil-widgets@donza/stylesheet.css"; do
   [[ -f $f ]] && grep -q "Cybersigil" "$f" && rm "$f" && say "$f"
 done
 for d in "$HOME/.themes/Cybersigil" "$HOME/.config/cybersigil/generated"; do
   [[ -d $d ]] && rm -r "$d" && say "$d"
+done
+
+echo "==> Temas de VS Code e IntelliJ"
+if command -v code >/dev/null && code --list-extensions 2>/dev/null | grep -qx cybersigil.cybersigil-theme; then
+  code --uninstall-extension cybersigil.cybersigil-theme >/dev/null 2>&1 && say "VS Code: cybersigil.cybersigil-theme"
+fi
+for j in "$HOME"/.local/share/JetBrains/*/cybersigil-theme.jar; do
+  [[ -f $j ]] && rm "$j" && say "$j"
 done
 
 echo "==> Archivos que había antes de instalar"
@@ -75,7 +86,7 @@ if [[ -d $HOME/.local/share/fonts/cybersigil ]]; then
   rm -r "$HOME/.local/share/fonts/cybersigil" && fc-cache -f >/dev/null && say "$HOME/.local/share/fonts/cybersigil"
 fi
 for d in "$HOME/.config/cybersigil/templates" "$HOME/.config/cybersigil" "$EXT/cybersigil-widgets@donza" \
-         "$HOME/.config/fastfetch" "$HOME/.config/btop/themes" "$HOME/.config/fontconfig/conf.d" "$HOME/.config/environment.d"; do
+         "$HOME/.config/fastfetch" "$HOME/.config/nvim/colors" "$HOME/.config/nvim" "$HOME/.config/btop/themes" "$HOME/.config/fontconfig/conf.d" "$HOME/.config/environment.d"; do
   [[ -d $d ]] && rmdir "$d" 2>/dev/null && say "$d" || true
 done
 
@@ -106,7 +117,12 @@ for k in picture-uri picture-uri-dark picture-options primary-color; do
   gsettings reset org.gnome.desktop.background "$k"
 done
 gsettings reset org.gnome.desktop.screensaver picture-uri
+# optimizaciones de dconf/tema.ini (lib/dconf_sync.py)
 gsettings reset org.freedesktop.Tracker3.Miner.Files index-on-battery 2>/dev/null || true
+gsettings reset org.gnome.mutter.experimental autoclose-xwayland 2>/dev/null || true
+for k in allow-updates download-updates download-updates-notify; do
+  gsettings reset org.gnome.software "$k" 2>/dev/null || true
+done
 # GNOME Software vuelve a abrirse con el servicio normal: que D-Bus relea sus archivos
 busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig 2>/dev/null || true
 systemctl --user daemon-reload 2>/dev/null || true
@@ -118,5 +134,8 @@ Quedan sin tocar:
   - los paquetes instalados (lista en $DOT/packages/)
   - las extensiones descargadas (desactivadas) en ${EXT/#"$HOME"/\~}
   - los ajustes de sistema: sudo bash $DOT/home/.config/cybersigil/system-tune.sh --revert
+  - la pantalla de inicio de sesión: sudo bash $DOT/home/.config/cybersigil/gdm-theme.sh --revert
+  - el arranque (GRUB y Plymouth): sudo bash $DOT/home/.config/cybersigil/boot-theme.sh --revert
+  - el tema de Brave: brave://settings/appearance → Reset to default
   - tus respaldos en ${BACKUPS/#"$HOME"/\~}
 EOF

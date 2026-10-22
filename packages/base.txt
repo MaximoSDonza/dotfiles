@@ -9,6 +9,7 @@ gnome-tweaks
 kitty
 less
 libnotify
+librsvg
 man-db
 man-pages
 nautilus-python
@@ -17,6 +18,8 @@ noto-fonts-cjk
 noto-fonts-emoji
 papirus-icon-theme
 python
+python-cairo
+python-gobject
 ripgrep
 rsync
 starship

@@ -1,0 +1,8 @@
+{
+  "uuid": "cybersigil-gdm@donza",
+  "name": "Cybersigil GDM",
+  "description": "Colores de la paleta Cybersigil en la pantalla de inicio de sesión. Solo aporta stylesheet.css.",
+  "shell-version": ["51"],
+  "session-modes": ["gdm"],
+  "version": 1
+}

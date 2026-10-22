@@ -12,3 +12,6 @@ __pycache__/
 .bashrc.local
 local.sh
 **/cybersigil/generated/
+
+# Vistas previas para evaluar ideas antes de implementarlas (no van al repo)
+preview/

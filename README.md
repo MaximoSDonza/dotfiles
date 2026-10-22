@@ -22,6 +22,8 @@
 | **Fuentes** | Space Grotesk · JetBrainsMono Nerd Font · UnifrakturMaguntia |
 | **Monitor** | btop |
 | **Extensiones** | Just Perfection · User Themes · Blur my Shell · Tiling Shell · Cybersigil Widgets (propia) |
+| **Apps con la paleta** | Brave · VS Code · IntelliJ · inicio de sesión (GDM) |
+| **Arranque** | menú de GRUB y animación de Plymouth con el sigilo |
 
 ## Widgets de escritorio
 
@@ -62,15 +64,77 @@ y la posición de la música se calcula localmente en vez de consultarle al repr
 | `ACCENT` | `#8b0a14` | rojo sangre |
 
 Todo el tema sale de un solo archivo: [`palette.sh`](home/.config/cybersigil/palette.sh).
-Cambia un color y ejecuta `cybersigil-apply`: se regeneran el tema de GNOME Shell, GTK, kitty, starship, fastfetch, btop, fzf y el wallpaper (SVG generado por código).
+Cambia un color y ejecuta `cybersigil-apply`: se regeneran el tema de GNOME Shell, GTK, kitty, neovim, starship, fastfetch, btop, fzf, el wallpaper (SVG generado por código), los temas de las apps y el del arranque (ver abajo).
+
+## Apps con la paleta
+
+`cybersigil-apply` también arma los temas de estas apps, en `~/.config/cybersigil/generated/`:
+
+| App | Cómo se aplica |
+|---|---|
+| **Neovim** | solo: `colors/cybersigil.lua`, con los mismos colores de código y sin fondo propio |
+| **VS Code** | solo: instala la extensión `cybersigil.cybersigil-theme` y `settings.json` ya la elige |
+| **IntelliJ** (y los demás IDE de JetBrains) | se copia sola a cada IDE instalado. Reinicia el IDE y elige *Settings → Appearance & Behavior → Appearance → Theme → Cybersigil*; el esquema del editor cambia con el tema |
+| **Brave** | una vez: `brave://extensions` → *Developer mode* → *Load unpacked* → `~/.config/cybersigil/generated/brave-theme`. Si cambias la paleta, recárgala (↻) desde esa página |
+| **Páginas web** (opcional) | con la extensión Dark Reader de Brave: los colores para cargarle están en `generated/brave-darkreader.txt` |
+| **Inicio de sesión (GDM)** | `sudo bash ~/.config/cybersigil/gdm-theme.sh` (y otra vez si cambias la paleta). Se ve al cerrar sesión; para deshacerlo, `--revert` |
+
+**Imagen de fondo** (opcional): kitty, neovim dentro de kitty (`~/.config/nvim/init.lua` lo deja sin
+fondo propio) e IntelliJ muestran una imagen tenue sobre el negro, pegada a la derecha y desvanecida
+hacia el texto. Se elige en `local.sh` con `APPS_BG_IMAGE="/ruta/a/la/imagen"`. Cuánto se ve
+(`APPS_BG_ALPHA`) y la transparencia de kitty (`APPS_OPACITY`) se cambian en `palette.sh`. IntelliJ toma
+el cambio la próxima vez que se ejecute `cybersigil-apply` con el IDE cerrado.
+
+El código usa colores propios de la paleta (`ACCENT_SOFT` y `SYN_*`), todos con un contraste de al menos
+4,5:1 sobre el fondo, para leer cómodo.
+
+GDM no se toca: `gdm-theme.sh` instala una extensión del sistema (`gdm/cybersigil-gdm@donza`) que solo
+corre en la pantalla de inicio, y la activa en la configuración de GDM (`/etc/dconf`). Así las
+actualizaciones de GNOME no la pisan. El logo de la distribución que aparece abajo pasa a los colores
+de la paleta (en Arch: el triángulo y "linux" en rojo, "arch" en blanco). Si el logo no es un SVG,
+se quita.
+
+Las ventanas GTK y libadwaita tienen esquinas rectas, como la barra y los widgets. Interruptores, casillas
+y botones redondos conservan su forma.
+
+## Arranque (GRUB y Plymouth)
+
+| Pantalla | Cómo se ve |
+|---|---|
+| **GRUB** | "Bootmenu" en gótica cromada sobre el sigilo oscurecido, menú en un panel con la línea roja de los widgets y cuenta regresiva que se llena de rojo |
+| **Plymouth** | fondo negro, el sigilo con un resplandor rojo que late, una línea de progreso fina y el nombre del sistema. También pide la clave si el disco está cifrado |
+
+`cybersigil-apply` los arma en `~/.config/cybersigil/generated/boot/` (solo cuando cambia la paleta).
+Para instalarlos o actualizarlos:
+
+```bash
+sudo bash ~/.config/cybersigil/boot-theme.sh            # se ve al reiniciar
+sudo bash ~/.config/cybersigil/boot-theme.sh --revert   # vuelve al arranque de antes
+```
+
+Qué hace, con cuidado porque es el arranque:
+
+- La primera vez guarda `/etc/default/grub`, `/boot/grub/grub.cfg` y el tema de Plymouth en
+  `/var/lib/cybersigil-boot/`. `--revert` los devuelve.
+- Conserva las opciones del kernel con las que arranca hoy el sistema, aunque no estén en
+  `/etc/default/grub` (por ejemplo, las que deja el instalador directo en `grub.cfg`). Agrega `splash`
+  para que se vea Plymouth.
+- Arma el `grub.cfg` nuevo aparte y solo reemplaza al actual si es válido (`grub-script-check`) y tiene
+  el tema y `splash`. Si algo falla, deja todo como estaba.
+- Usa la resolución nativa de la pantalla en GRUB y rehace el initramfs (`mkinitcpio -P`) solo si el
+  tema de Plymouth cambió.
+- Si el equipo no arranca con GRUB, o Plymouth no está en el initramfs (`HOOKS` de
+  `/etc/mkinitcpio.conf`), omite esa parte y avisa.
 
 ## Estructura
 
 ```
 home/            → se enlaza tal cual dentro de ~ (misma estructura que $HOME)
-  .config/cybersigil/   palette.sh, apply.sh, system-tune.sh y plantillas
+  .config/cybersigil/   palette.sh, apply.sh, system-tune.sh, gdm-theme.sh, boot-theme.sh y plantillas
+gdm/             → extensión que pinta la pantalla de inicio de sesión (la instala gdm-theme.sh)
 firefox/user.js  → Firefox sin telemetría
-dconf/           → ajustes de GNOME y de las extensiones
+dconf/           → ajustes de GNOME: tema.ini (siempre) y personal.ini (con --personal)
+lib/             → dconf_sync.py: separa, respalda y restaura esos ajustes
 packages/        → listas de paquetes (ver "Paquetes")
 fonts/           → fuentes que no están en los repos, con su licencia OFL
 plantillas/      → plantillas de Nautilus (clic derecho → Nuevo documento); se copian, no se enlazan
@@ -101,7 +165,7 @@ cd ~/dotfiles
 
 sudo pacman -S --needed - < packages/base.txt    # lo que necesita el tema
 yay -S --needed - < packages/aur-base.txt
-./install.sh
+./install.sh                                     # o ./install.sh --personal (ver "Ajustes de GNOME")
 
 # Opcional: ajustes de sistema según tu hardware (ver abajo)
 echo 'WIFI_REGDOM="AR"' >> ~/.config/cybersigil/local.sh   # código de tu país, para el WiFi
@@ -124,16 +188,31 @@ Cierra sesión y vuelve a entrar. Los archivos que ya existían se mueven a `~/.
 | `exclude.txt` | lo que nunca entra en las listas de apps: kernel, firmware, drivers (los pone `system-tune.sh` según el equipo) y restos de KDE/Hyprland | a mano |
 | `gnome-extensions.txt` | extensiones que descarga `install.sh` | solas, con `backup.sh` |
 
+## Ajustes de GNOME
+
+| `dconf/tema.ini`: se aplica siempre | `dconf/personal.ini`: solo con `./install.sh --personal` |
+|---|---|
+| ajustes de Blur my Shell, Just Perfection, Tiling Shell y User Themes | favoritos y orden de las apps |
+| activar las extensiones del rice, **sumándolas** a las que ya tengas | otras extensiones activadas, relojes mundiales |
+| optimizaciones: GNOME Software sin actualizaciones automáticas, indexador sin trabajar a batería, **cierre automático de Xwayland** (libera ~250 MB cuando no hay apps X11 abiertas) | touchpad, tamaño del cursor, proveedores de búsqueda, privacidad |
+| | atajos personalizados (Ctrl+Alt+T → kitty) |
+
+Fuentes, iconos, cursor y colores no están en ninguno: los aplica `cybersigil-apply` desde la paleta.
+Tampoco se guarda el estado interno de GNOME (historial de Alt+F2, versión de su configuración…).
+
 ## Desinstalación
 
 ```bash
 ~/dotfiles/uninstall.sh
 sudo bash ~/dotfiles/home/.config/cybersigil/system-tune.sh --revert   # si ejecutaste system-tune.sh
+sudo bash ~/dotfiles/home/.config/cybersigil/gdm-theme.sh --revert     # si ejecutaste gdm-theme.sh
+sudo bash ~/dotfiles/home/.config/cybersigil/boot-theme.sh --revert    # si ejecutaste boot-theme.sh
 ```
 
 `uninstall.sh` quita los enlaces y restaura los archivos que había antes, borra lo que generó el tema,
-desactiva las extensiones, devuelve GNOME a sus valores por defecto y reactiva los servicios que se habían
-apagado. Antes guarda tus ajustes de GNOME en `~/.dotfiles-backup/antes-de-desinstalar-*/dconf.ini`.
+desactiva las extensiones, devuelve a sus valores por defecto los ajustes del tema y reactiva los servicios
+que se habían apagado. También quita los temas de VS Code e IntelliJ. El de Brave se quita desde el
+navegador (`brave://settings/appearance` → *Reset to default*). Tus ajustes personales quedan como están. Antes guarda tus ajustes de GNOME en `~/.dotfiles-backup/antes-de-desinstalar-*/dconf.ini`.
 No desinstala paquetes.
 
 ## Ajustes de sistema (`system-tune.sh`)

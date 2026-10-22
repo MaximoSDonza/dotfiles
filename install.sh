@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 # Instala estos dotfiles: enlaza home/ dentro de $HOME, restaura GNOME y aplica el tema.
-# Uso: ./install.sh            (todo)
-#      ./install.sh --links    (solo enlaces simbólicos)
+# Uso: ./install.sh              tema completo (enlaces, extensiones, ajustes del tema, servicios)
+#      ./install.sh --personal   además mis preferencias de GNOME (favoritos, touchpad, atajos...)
+#      ./install.sh --links      solo los enlaces simbólicos
 # Lo que ya existe en $HOME y no es un enlace se mueve a ~/.dotfiles-backup/<fecha>/
 set -euo pipefail
 DOT="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 BACKUP="$HOME/.dotfiles-backup/$(date +%F_%H%M%S)"
+LINKS_ONLY=0 PERSONAL=0
+for arg in "$@"; do
+  case $arg in
+    --links) LINKS_ONLY=1 ;;
+    --personal) PERSONAL=1 ;;
+    *) echo "Opción desconocida: $arg (ver el encabezado de install.sh)" >&2; exit 1 ;;
+  esac
+done
 
 link() {  # link <origen en repo> <destino>
   local src=$1 dst=$2
@@ -33,7 +42,7 @@ done
 (( ff )) || echo "  ! Firefox sin perfil todavía: ábrelo una vez y ejecuta ./install.sh --links"
 # control de secretos antes de cada commit (ver .githooks/pre-commit)
 git -C "$DOT" config core.hooksPath .githooks 2>/dev/null || true
-[[ ${1:-} == --links ]] && exit 0
+(( LINKS_ONLY )) && exit 0
 
 echo "==> Plantillas de Nautilus (clic derecho → Nuevo documento)"
 # copias, no enlaces: un documento nuevo no debe quedar enlazado al repo
@@ -56,11 +65,12 @@ while read -r uuid; do
 done < "$DOT/packages/gnome-extensions.txt"
 rm -rf "$TMP"
 
-echo "==> Ajustes de GNOME (dconf)"
-for f in "$DOT"/dconf/*.ini; do
-  path="/$(basename "$f" .ini | tr '+' '/')/"
-  dconf load "$path" < "$f" && echo "  ↳ $path"
-done
+echo "==> Ajustes de GNOME del tema"
+python3 -I "$DOT/lib/dconf_sync.py" restore "$DOT/dconf/tema.ini"
+if (( PERSONAL )); then
+  echo "==> Ajustes personales de GNOME (favoritos, touchpad, atajos...)"
+  python3 -I "$DOT/lib/dconf_sync.py" restore "$DOT/dconf/personal.ini"
+fi
 
 echo "==> Servicios de usuario"
 # GNOME Software no arranca con la sesión; se abre a demanda (ver home/.local/share/dbus-1/services)

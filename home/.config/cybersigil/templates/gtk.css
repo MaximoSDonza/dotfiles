@@ -24,3 +24,13 @@
 @define-color popover_fg_color @@TEXT@@;
 @define-color thumbnail_bg_color @@SURFACE@@;
 @define-color borders @@CHROME_DIM@@;
+
+/* Esquinas rectas, como GNOME Shell y los widgets. Interruptores, casillas y botones de opción
+   conservan su forma: se reconocen por ella */
+decoration, window, window.csd, window.csd > .titlebar, headerbar, .titlebar,
+dialog, messagedialog, popover, popover > contents, popover.menu > contents, menu, .menu, .context-menu,
+tooltip, tooltip > contents, .card, .boxed-list, list.boxed-list > row, .toolbar, .osd,
+button, entry, spinbutton, combobox > box > button, dropdown > button, searchbar > revealer > box,
+.navigation-sidebar > row, notebook > header tab, scrollbar slider {
+  border-radius: 0;
+}

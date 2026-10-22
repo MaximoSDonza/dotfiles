@@ -1,0 +1,7 @@
+Cybersigil — colores para Dark Reader (generado por cybersigil-apply desde palette.sh)
+
+Dark Reader → Configuración → Colores (modo oscuro):
+  Fondo .............. @@BG@@
+  Texto .............. @@TEXT@@
+  Selección .......... @@ACCENT@@
+  Barra de desplaz. .. @@CHROME_DIM@@

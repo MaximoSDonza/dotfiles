@@ -25,14 +25,17 @@ render() {  # render <plantilla> <destino>
 }
 # Tokens de las plantillas. Cada color existe en tres formatos:
 #   @@X@@ → #8b0a14 · @@X_RGB@@ → 139, 10, 20 (rgba() en CSS) · @@X_ANSI@@ → 139;10;20 (terminal)
+#   @@X_HEX@@ → 8b0a14 (IntelliJ)
 # GLASS_* van primero porque en palette.sh pueden contener tokens de color (ej. @@CHROME_RGB@@)
 SED_ARGS=()
 for v in GLASS GLASS_CARD GLASS_HOVER FONT_SIGIL WIDGET_ALPHA; do SED_ARGS+=(-e "s/@@$v@@/${!v}/g"); done
-for v in BG BG_ALT SURFACE SURFACE_HI TEXT CHROME CHROME_DIM CHROME_HI ACCENT ACCENT_HI; do
+for v in BG BG_ALT SURFACE SURFACE_HI TEXT CHROME CHROME_DIM CHROME_HI ACCENT ACCENT_HI \
+         ACCENT_SOFT SYN_STRING SYN_NUMBER SYN_TYPE SYN_PROPERTY SYN_COMMENT; do
   hex=${!v}
   [[ $hex =~ ^#[0-9a-fA-F]{6}$ ]] || { echo "palette.sh: $v='$hex' no es un color #rrggbb" >&2; exit 1; }
   r=$((16#${hex:1:2})) g=$((16#${hex:3:2})) b=$((16#${hex:5:2}))
-  SED_ARGS+=(-e "s/@@$v@@/$hex/g" -e "s/@@${v}_RGB@@/$r, $g, $b/g" -e "s/@@${v}_ANSI@@/$r;$g;$b/g")
+  SED_ARGS+=(-e "s/@@$v@@/$hex/g" -e "s/@@${v}_RGB@@/$r, $g, $b/g" -e "s/@@${v}_ANSI@@/$r;$g;$b/g" \
+            -e "s/@@${v}_HEX@@/${hex:1}/g")
 done
 subst() {  # subst <plantilla>: reemplaza los tokens y escribe en stdout
   sed "${SED_ARGS[@]}" "$DIR/templates/$1"
@@ -47,6 +50,44 @@ mkdir -p "$HOME/.config/gtk-4.0"
 protect "$HOME/.config/gtk-4.0/gtk.css"
 { subst gtk.css; subst gtk4-vars.css; } > "$HOME/.config/gtk-4.0/gtk.css"
 render kitty-theme.conf "$HOME/.config/kitty/cybersigil.conf"
+# Imagen de fondo de kitty e IntelliJ (APPS_BG_IMAGE): pegada a la derecha sobre el negro, tenue y
+# desvanecida hacia la izquierda, donde está el texto. Se arma solo si cambió la imagen o la opacidad
+FONDO="$HOME/.config/cybersigil/generated/fondo-apps"
+echo "background_opacity $APPS_OPACITY" >> "$HOME/.config/kitty/cybersigil.conf"
+if [[ -n $APPS_BG_IMAGE && -r $APPS_BG_IMAGE ]]; then
+  origen=$({ sha1sum < "$APPS_BG_IMAGE"; echo "$APPS_BG_ALPHA $BG"; } | sha1sum | cut -d' ' -f1)
+  if [[ $origen != "$(cat "$FONDO.origen" 2>/dev/null)" ]]; then
+    mkdir -p "$(dirname "$FONDO")"
+    python3 -I - "$APPS_BG_IMAGE" "$FONDO" "$APPS_BG_ALPHA" "$BG" <<'EOF' && echo "$origen" > "$FONDO.origen"
+# FONDO.png: opaco, para kitty · FONDO-transparente.png: solo la imagen tenue, para IntelliJ
+import io, sys
+import cairo, gi
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import GdkPixbuf
+imagen, salida, alfa, bg = sys.argv[1], sys.argv[2], float(sys.argv[3]), sys.argv[4]
+W, H = 2560, 1440
+pb = GdkPixbuf.Pixbuf.new_from_file(imagen)
+pb = pb.scale_simple(round(pb.get_width() * H / pb.get_height()), H, GdkPixbuf.InterpType.HYPER)
+img = cairo.ImageSurface.create_from_png(io.BytesIO(pb.save_to_bufferv("png", [], [])[1]))
+x = W - img.get_width()
+for opaco in (True, False):
+    s = cairo.ImageSurface(cairo.FORMAT_ARGB32, W, H)
+    cr = cairo.Context(s)
+    if opaco:
+        cr.set_source_rgb(*(int(bg[i:i + 2], 16) / 255 for i in (1, 3, 5)))
+        cr.paint()
+    desvanecido = cairo.LinearGradient(x, 0, x + img.get_width() * 0.45, 0)
+    desvanecido.add_color_stop_rgba(0, 0, 0, 0, 0)
+    desvanecido.add_color_stop_rgba(1, 0, 0, 0, alfa)
+    cr.set_source_surface(img, x, 0)
+    cr.mask(desvanecido)
+    s.write_to_png(salida + (".png" if opaco else "-transparente.png"))
+EOF
+  fi
+  printf 'background_image %s\nbackground_image_layout cscaled\nbackground_image_linear yes\n' "$FONDO.png" \
+    >> "$HOME/.config/kitty/cybersigil.conf"
+fi
+render nvim-colors.lua "$HOME/.config/nvim/colors/cybersigil.lua"
 render starship.toml "$HOME/.config/starship.toml"
 render fastfetch.jsonc "$HOME/.config/fastfetch/config.jsonc"
 # Widgets de escritorio: estilos y configuración de la extensión
@@ -66,6 +107,116 @@ json.dump({
     "margin": int(e["WIDGET_MARGIN"]), "gap": int(e["WIDGET_GAP"]), "blur": int(e["WIDGET_BLUR"]),
 }, open(sys.argv[1], "w"), ensure_ascii=False, indent=2)
 EOF
+fi
+
+# Apps con la paleta: Brave, VS Code, IntelliJ y la pantalla de inicio de sesión (GDM)
+G="$HOME/.config/cybersigil/generated"
+mkdir -p "$G/brave-theme" "$G/vscode/extension/themes" "$G/intellij/META-INF" "$G/intellij/themes"
+render brave-theme.json "$G/brave-theme/manifest.json"      # Brave: brave://extensions → Cargar descomprimida
+render darkreader.txt "$G/brave-darkreader.txt"             # colores para la extensión Dark Reader
+render gdm.css "$G/gdm.css"                                 # lo instala: sudo bash gdm-theme.sh
+subst vscode-package.json > "$G/vscode/extension/package.json"
+subst vscode-theme.json > "$G/vscode/extension/themes/cybersigil-color-theme.json"
+subst intellij-plugin.xml > "$G/intellij/META-INF/plugin.xml"
+subst intellij-theme.json > "$G/intellij/themes/cybersigil.theme.json"
+subst intellij-scheme.xml > "$G/intellij/themes/cybersigil.xml"
+python3 -I - "$G" <<'EOF'
+# Empaqueta los temas: .vsix para VS Code (zip con su manifiesto) y .jar (plugin) para JetBrains
+import os, sys, zipfile
+g = sys.argv[1]
+def pack(src, dest, extra):
+    with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, content in extra.items():
+            z.writestr(zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0)), content)
+        for root, _, files in sorted(os.walk(src)):
+            for f in sorted(files):
+                if not f.startswith(".") and not f.endswith((".vsix", ".jar")):
+                    full = os.path.join(root, f)
+                    # fecha fija: mismo contenido → mismo archivo (no se reinstala si no cambió)
+                    info = zipfile.ZipInfo(os.path.relpath(full, src), date_time=(2026, 1, 1, 0, 0, 0))
+                    info.compress_type = zipfile.ZIP_DEFLATED
+                    with open(full, "rb") as fh:
+                        z.writestr(info, fh.read())
+pack(f"{g}/vscode", f"{g}/vscode/cybersigil.vsix", {
+    "[Content_Types].xml": '<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                           '<Default Extension=".json" ContentType="application/json"/><Default Extension=".vsixmanifest" ContentType="text/xml"/></Types>',
+    "extension.vsixmanifest": '<?xml version="1.0" encoding="utf-8"?>\n<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">'
+        '<Metadata><Identity Language="en-US" Id="cybersigil-theme" Version="1.0.0" Publisher="cybersigil"/><DisplayName>Cybersigil</DisplayName>'
+        '<Description xml:space="preserve">Tema generado desde palette.sh</Description><Categories>Themes</Categories>'
+        '<Properties><Property Id="Microsoft.VisualStudio.Code.Engine" Value="^1.70.0"/></Properties></Metadata>'
+        '<Installation><InstallationTarget Id="Microsoft.VisualStudio.Code"/></Installation><Dependencies/>'
+        '<Assets><Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true"/></Assets></PackageManifest>',
+})
+pack(f"{g}/intellij", f"{g}/intellij/cybersigil-theme.jar", {})
+EOF
+# VS Code: se instala solo si el tema cambió o no está (code --install-extension tarda unos segundos)
+if command -v code >/dev/null; then
+  sum=$(cat "$G/vscode/extension/package.json" "$G/vscode/extension/themes/"*.json | sha1sum | cut -d' ' -f1)
+  if [[ $sum != "$(cat "$G/vscode/.instalado" 2>/dev/null)" || $(code --list-extensions 2>/dev/null) != *cybersigil.cybersigil-theme* ]]; then
+    code --install-extension "$G/vscode/cybersigil.vsix" --force >/dev/null 2>&1 &&
+      echo "$sum" > "$G/vscode/.instalado" && echo "  VS Code: tema Cybersigil instalado"
+  fi
+fi
+# IDEs de JetBrains: el plugin va a la carpeta de plugins de cada IDE configurado (~/.config/JetBrains/<IDE>)
+for cfg in "$HOME"/.config/JetBrains/*/; do
+  [[ -d $cfg ]] || continue
+  plugins="$HOME/.local/share/JetBrains/$(basename "$cfg")"
+  mkdir -p "$plugins"
+  cmp -s "$G/intellij/cybersigil-theme.jar" "$plugins/cybersigil-theme.jar" 2>/dev/null ||
+    { cp "$G/intellij/cybersigil-theme.jar" "$plugins/" && echo "  $(basename "$cfg"): tema Cybersigil (Ajustes → Apariencia → Tema)"; }
+  # imagen de fondo del editor y de la ventana (la misma de kitty, ya tenue). Con el IDE abierto no se
+  # toca: al cerrarse guarda su configuración y pisaría el cambio
+  if [[ -f $cfg/options/other.xml ]] && ! pgrep -u "$USER" -f 'com.intellij.idea.Main' >/dev/null; then
+    imagen=""
+    [[ -n $APPS_BG_IMAGE && -f $FONDO-transparente.png ]] && imagen="$FONDO-transparente.png,100,scale,center"
+    python3 -I - "$cfg/options/other.xml" "$imagen" <<'EOF'
+import json, os, re, sys
+ruta, valor = sys.argv[1], sys.argv[2]
+xml = open(ruta).read()
+m = re.search(r'(<component name="PropertyService"><!\[CDATA\[)(.*?)(\]\]></component>)', xml, re.S)
+datos = json.loads(m.group(2)) if m else {}
+props = datos.setdefault("keyToString", {})
+antes = dict(props)
+for clave in ("idea.background.editor", "idea.background.frame"):
+    if valor:
+        props[clave] = valor
+    elif "fondo-apps" in props.get(clave, ""):   # solo quita la imagen si la puso cybersigil-apply
+        del props[clave]
+if props != antes:
+    bloque = json.dumps(datos, indent=2, ensure_ascii=False)
+    if m:
+        xml = xml[:m.start(2)] + bloque + xml[m.end(2):]
+    else:
+        xml = xml.replace("</application>", f'  <component name="PropertyService"><![CDATA[{bloque}]]></component>\n</application>')
+    open(ruta, "w").write(xml)
+    print(f"  {os.path.normpath(ruta).split('/')[-3]}: imagen de fondo {'puesta' if valor else 'quitada'}")
+EOF
+  fi
+done
+# Logo de la pantalla de inicio: el de la distribución con sus colores pasados a la paleta (blanco y
+# grises quedan, el resto pasa a rojo). Si no es un SVG no se genera y gdm-theme.sh lo quita
+logo=$(gsettings get org.gnome.login-screen logo 2>/dev/null | tr -d "'")
+rm -f "$G/gdm-logo.svg"
+if [[ $logo == *.svg && -r $logo ]]; then
+  python3 -I - "$logo" "$ACCENT_HI" > "$G/gdm-logo.svg" <<'EOF'
+import colorsys, re, sys
+def color(m):
+    h = m.group(2) if len(m.group(2)) == 6 else "".join(c * 2 for c in m.group(2))
+    saturacion = colorsys.rgb_to_hls(*(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)))[2]
+    return m.group(1) + (sys.argv[2] if saturacion > 0.25 else "#" + m.group(2))
+svg = open(sys.argv[1]).read()
+print(re.sub(r"""((?:fill|stroke|stop-color)\s*[=:]\s*["']?)#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b""", color, svg), end="")
+EOF
+fi
+# Arranque (menú de GRUB y Plymouth): lo instala sudo bash boot-theme.sh. Se rehace solo si cambió
+# la paleta o el generador, porque tarda un par de segundos
+if python3 -c 'import cairo, gi' 2>/dev/null; then
+  origen=$({ cat "$DIR/palette.sh" "$DIR"/templates/{boot,wallpaper}.py; command -v grub-mkfont; } | sha1sum | cut -d' ' -f1)
+  if [[ $origen != "$(cat "$G/boot/.origen" 2>/dev/null)" ]]; then
+    rm -rf "$G/boot"
+    python3 -I "$DIR/templates/boot.py" "$G/boot" && echo "$origen" > "$G/boot/.origen" &&
+      echo "  arranque: tema nuevo (instalar: sudo bash ~/.config/cybersigil/boot-theme.sh)"
+  fi
 fi
 
 WP="$HOME/.local/share/backgrounds/cybersigil.svg"

@@ -10,6 +10,14 @@ CHROME_HI="#f0f0f4"   # brillo del cromo
 ACCENT="#8b0a14"      # rojo sangre
 ACCENT_HI="#b3121f"   # rojo sangre activo
 
+# Código (VS Code, IntelliJ). Todos con contraste ≥ 4,5:1 sobre el fondo, para leer cómodo
+ACCENT_SOFT="#e0485e"   # rojo legible como texto: palabras clave (ACCENT_HI da 3:1, no alcanza)
+SYN_STRING="#b4b9b2"    # textos entre comillas
+SYN_NUMBER="#cfc6b8"    # números y constantes
+SYN_TYPE="#a7b0bb"      # clases y tipos
+SYN_PROPERTY="#b8a6b4"  # propiedades y atributos
+SYN_COMMENT="#7a7a84"   # comentarios
+
 # Cristal oscuro: fondos de menús sobre el blur (Blur my Shell). Último valor = opacidad
 GLASS="rgba(8, 8, 10, 0.55)"         # menús, calendario, ajustes rápidos
 GLASS_CARD="rgba(30, 30, 34, 0.50)"  # tarjetas dentro de los menús
@@ -40,3 +48,10 @@ WEATHER_CITY="Buenos Aires"
 WEATHER_REGION="Argentina"
 WEATHER_LAT=-34.6037              # coordenadas: https://open-meteo.com/en/docs/geocoding-api
 WEATHER_LON=-58.3816
+
+# Imagen de fondo de kitty (se ve también en neovim) e IntelliJ, tenue sobre el negro.
+# Vacía = sin imagen. La tuya ponla en local.sh, por ejemplo:
+#   APPS_BG_IMAGE="$HOME/.local/share/cybersigil/mi-imagen.jpg"
+APPS_BG_IMAGE=""
+APPS_BG_ALPHA=0.16                # cuánto se ve la imagen (0–1): poco, para leer el texto encima
+APPS_OPACITY=0.85                 # transparencia de la ventana de kitty (1 = opaca)

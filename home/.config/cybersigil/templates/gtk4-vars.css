@@ -16,4 +16,5 @@
   --dialog-bg-color: @@SURFACE@@;
   --popover-bg-color: @@SURFACE@@;
   --border-color: @@CHROME_DIM@@;
+  --window-radius: 0px;   /* libadwaita redondea las ventanas con esta variable (15px) */
 }

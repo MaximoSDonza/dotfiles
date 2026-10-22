@@ -1,0 +1,71 @@
+{
+  "name": "Cybersigil",
+  "dark": true,
+  "author": "Cybersigil (generado por cybersigil-apply desde palette.sh)",
+  "editorScheme": "/themes/cybersigil.xml",
+  "colors": {
+    "bg": "@@BG@@", "bgAlt": "@@BG_ALT@@", "surface": "@@SURFACE@@", "surfaceHi": "@@SURFACE_HI@@",
+    "text": "@@TEXT@@", "chrome": "@@CHROME@@", "chromeDim": "@@CHROME_DIM@@", "chromeHi": "@@CHROME_HI@@",
+    "accent": "@@ACCENT@@", "accentHi": "@@ACCENT_HI@@", "accentSoft": "@@ACCENT_SOFT@@"
+  },
+  "ui": {
+    "*": {
+      "background": "bgAlt",
+      "foreground": "text",
+      "infoForeground": "chrome",
+      "disabledForeground": "chromeDim",
+      "selectionBackground": "accent",
+      "selectionForeground": "chromeHi",
+      "selectionInactiveBackground": "surfaceHi",
+      "selectionBackgroundInactive": "surfaceHi",
+      "hoverBackground": "surface",
+      "borderColor": "chromeDim",
+      "separatorColor": "surfaceHi",
+      "focusColor": "accent",
+      "focusedBorderColor": "accentHi",
+      "inactiveBackground": "bg",
+      "arc": 0
+    },
+    "Component": { "arc": 0, "focusWidth": 1, "focusColor": "accent", "focusedBorderColor": "accentHi", "borderColor": "chromeDim" },
+    "Button": {
+      "arc": 0,
+      "startBackground": "surface", "endBackground": "surface", "startBorderColor": "chromeDim", "endBorderColor": "chromeDim",
+      "default": { "startBackground": "accent", "endBackground": "accent", "foreground": "chromeHi",
+                   "startBorderColor": "accentHi", "endBorderColor": "accentHi", "focusedBorderColor": "chromeHi" }
+    },
+    "TextField": { "background": "bg", "arc": 0 },
+    "ComboBox": { "background": "bg", "nonEditableBackground": "surface", "arc": 0 },
+    "CheckBox": { "Background.Selected": "accent", "Border.Selected": "accentHi" },
+    "Link": { "activeForeground": "accentSoft", "hoverForeground": "chromeHi" },
+    "MainWindow": { "background": "bg" },
+    "MainToolbar": { "background": "bg", "inactiveBackground": "bg" },
+    "TitlePane": { "background": "bg", "inactiveBackground": "bg" },
+    "StatusBar": { "background": "bg", "borderColor": "surfaceHi" },
+    "ToolWindow": {
+      "background": "bgAlt",
+      "Header": { "background": "bgAlt", "inactiveBackground": "bgAlt", "borderColor": "surfaceHi" },
+      "HeaderTab": { "underlineColor": "accentHi", "selectedInactiveBackground": "surface", "hoverBackground": "surface" },
+      "Button": { "selectedBackground": "surfaceHi", "hoverBackground": "surface" },
+      "Stripe": { "background": "bg" }
+    },
+    "EditorTabs": { "background": "bg", "underlinedTabBackground": "bg", "underlineColor": "accentHi",
+                    "inactiveUnderlineColor": "chromeDim", "hoverBackground": "surface", "borderColor": "surfaceHi" },
+    "TabbedPane": { "underlineColor": "accentHi", "focusColor": "surface", "hoverColor": "surface" },
+    "Tree": { "background": "bgAlt", "selectionBackground": "surfaceHi", "selectionInactiveBackground": "surface" },
+    "List": { "background": "bgAlt", "selectionBackground": "surfaceHi", "selectionInactiveBackground": "surface" },
+    "Table": { "background": "bgAlt", "selectionBackground": "surfaceHi", "stripeColor": "bg" },
+    "Popup": { "background": "surface", "borderColor": "chromeDim", "Header.activeBackground": "surfaceHi" },
+    "PopupMenu": { "background": "surface" },
+    "Menu": { "background": "surface", "selectionBackground": "accent" },
+    "MenuItem": { "background": "surface", "selectionBackground": "accent" },
+    "ToolTip": { "background": "surface", "borderColor": "chromeDim" },
+    "ProgressBar": { "progressColor": "accentHi", "indeterminateStartColor": "accent", "indeterminateEndColor": "accentHi",
+                     "trackColor": "surfaceHi" },
+    "ScrollBar": { "thumbColor": "@@CHROME_DIM@@66", "hoverThumbColor": "@@CHROME@@66", "Transparent.thumbColor": "@@CHROME_DIM@@66",
+                   "Transparent.hoverThumbColor": "@@CHROME@@66" },
+    "Notification": { "background": "surface", "borderColor": "chromeDim" },
+    "SearchEverywhere": { "Header.background": "surface", "SearchField.background": "bg" },
+    "Editor": { "background": "bg", "shortcutForeground": "accentSoft" },
+    "EditorPane": { "background": "bg" }
+  }
+}

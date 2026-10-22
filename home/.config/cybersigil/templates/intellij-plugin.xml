@@ -1,0 +1,13 @@
+<!-- Cybersigil — plugin de tema para IDEs de JetBrains. Lo empaqueta cybersigil-apply -->
+<idea-plugin>
+  <id>dev.cybersigil.theme</id>
+  <name>Cybersigil Theme</name>
+  <version>1.0</version>
+  <vendor>Cybersigil</vendor>
+  <description>Tema Cybersigil (interfaz y editor) generado desde palette.sh.</description>
+  <idea-version since-build="242"/>
+  <depends>com.intellij.modules.platform</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <themeProvider id="cybersigil" path="/themes/cybersigil.theme.json"/>
+  </extensions>
+</idea-plugin>
