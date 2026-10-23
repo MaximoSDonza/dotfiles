@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Cybersigil — temas de arranque: menú de GRUB y animación de Plymouth, desde palette.sh.
-Uso: boot.py CARPETA (lo llama cybersigil-apply con la paleta en el entorno). Escribe CARPETA/grub y
-CARPETA/plymouth; los instala sudo bash boot-theme.sh. Sin grub-mkfont arma solo el de Plymouth."""
+"""Cybersigil — temas de arranque: menú de GRUB, animación de Plymouth y el logo que muestra cada
+imagen unificada del kernel (UKI) al arrancar, desde palette.sh.
+Uso: boot.py CARPETA [LOGO.svg] (lo llama cybersigil-apply con la paleta en el entorno). Escribe
+CARPETA/grub, CARPETA/plymouth y CARPETA/uki-splash.bmp (este solo si recibe el logo); los instala
+sudo bash boot-theme.sh. Sin grub-mkfont arma solo lo de Plymouth y el logo."""
 import math
 import os
 import re
@@ -27,8 +29,10 @@ MONO = "JetBrainsMono Nerd Font"
 TITULO = "Bootmenu"
 PLY_DIR = "/usr/share/plymouth/themes/cybersigil"   # donde lo instala boot-theme.sh
 
-# GRUB: menú centrado (los mismos números van a theme.txt)
-MENU = dict(ancho=680, alto=214, arriba=0.34, relleno=24, item=48, separacion=8, sangria=18)
+# GRUB: menú centrado (los mismos números van a theme.txt). Entran 7 entradas (los kernels, la
+# configuración UEFI y otros sistemas); si hay más, aparece una barra de desplazamiento roja
+MENU = dict(ancho=680, filas=7, arriba=0.34, relleno=16, item=44, separacion=6, sangria=18)
+MENU["alto"] = 2 + 1 + 2 * MENU["relleno"] + MENU["filas"] * MENU["item"] + (MENU["filas"] - 1) * MENU["separacion"]
 
 # Cajas de GRUB (styled box): pieza -> (ancho, alto, color). Las que faltan no se dibujan
 CAJAS = {
@@ -40,6 +44,9 @@ CAJAS = {
              "se": (1, 1, ("CHROME_DIM", 0.8))},
     # entrada elegida: velo rojo con una barra roja a la izquierda
     "select": {"c": (8, 8, ("ACCENT", 0.32)), "w": (3, 8, ("ACCENT_HI", 1))},
+    # barra de desplazamiento (solo si hay más entradas de las que entran)
+    "scroll_frame": {"c": (3, 8, ("CHROME_DIM", 0.5))},
+    "scroll_thumb": {"c": (3, 8, ("ACCENT_HI", 1))},
     # cuenta regresiva: pista tenue que se llena de rojo
     "barra": {"c": (4, 2, ("CHROME_DIM", 0.6))},
     "avance": {"c": (4, 2, ("ACCENT_HI", 1))},
@@ -235,7 +242,10 @@ terminal-border: "0"
   item_icon_space = {m['sangria']}
   menu_pixmap_style = "menu_*.png"
   selected_item_pixmap_style = "select_*.png"
-  scrollbar = false
+  scrollbar = true
+  scrollbar_width = 3
+  scrollbar_frame = "scroll_frame_*.png"
+  scrollbar_thumb = "scroll_thumb_*.png"
 }}
 
 # cuenta regresiva: una línea que se llena de rojo y el texto con los segundos
@@ -245,7 +255,6 @@ terminal-border: "0"
   top = {arriba}+{debajo}
   width = {m['ancho']}
   height = 2
-  show_text = false
   bar_style = "barra_*.png"
   highlight_style = "avance_*.png"
 }}
@@ -449,11 +458,48 @@ Plymouth.SetMessageFunction(mostrar_mensaje);
 """)
 
 
-def generar(salida):
+# ───────────────────────── logo de la UKI ─────────────────────────
+
+SPLASH_ANCHO = 566   # el mismo ancho que el logo de Arch que traen las UKI (splash-arch.bmp)
+
+
+def bmp24(ruta, s):
+    """Guarda una superficie RGB24 de cairo como BMP de 24 bits sin compresión: el formato más simple
+    que entiende el arranque de la UKI (systemd-stub)."""
+    s.flush()
+    w, h, stride, datos = s.get_width(), s.get_height(), s.get_stride(), bytes(s.get_data())
+    relleno = b"\0" * ((4 - w * 3 % 4) % 4)   # cada fila ocupa un múltiplo de 4 bytes
+    filas = []
+    for y in range(h - 1, -1, -1):           # en BMP la primera fila es la de abajo
+        linea = datos[y * stride:y * stride + w * 4]   # cairo: azul, verde, rojo, (sin uso)
+        filas.append(b"".join(linea[i:i + 3] for i in range(0, w * 4, 4)) + relleno)
+    cuerpo = b"".join(filas)
+    cabecera = struct.pack("<2sIHHI", b"BM", 14 + 40 + len(cuerpo), 0, 0, 14 + 40)
+    dib = struct.pack("<IiiHHIIiiII", 40, w, h, 1, 24, 0, len(cuerpo), 2835, 2835, 0, 0)
+    open(ruta, "wb").write(cabecera + dib + cuerpo)
+
+
+def uki_splash(dest, logo):
+    """El logo de la distribución (ya con los colores de la paleta) sobre el fondo, como BMP."""
+    svg = open(logo).read()
+    caja = re.search(r'viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)', svg)
+    proporcion = float(caja.group(2)) / float(caja.group(1)) if caja else 1 / 3
+    w, h = SPLASH_ANCHO, round(SPLASH_ANCHO * proporcion)
+    s = cairo.ImageSurface(cairo.FORMAT_RGB24, w, h)
+    cr = cairo.Context(s)
+    cr.set_source_rgba(*rgb("BG"))
+    cr.paint()
+    dibujar_svg(cr, svg, 0, 0, w, h)
+    bmp24(os.path.join(dest, "uki-splash.bmp"), s)
+
+
+def generar(salida, logo=None):
     ply = os.path.join(salida, "plymouth")
     os.makedirs(ply, exist_ok=True)
     ply_imagenes(ply)
     ply_tema(ply)
+    if logo and os.path.exists(logo):
+        uki_splash(salida, logo)
     if shutil.which("grub-mkfont"):
         grub = os.path.join(salida, "grub")
         os.makedirs(grub, exist_ok=True)
@@ -462,4 +508,4 @@ def generar(salida):
 
 
 if __name__ == "__main__":
-    generar(sys.argv[1])
+    generar(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)

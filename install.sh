@@ -46,7 +46,9 @@ git -C "$DOT" config core.hooksPath .githooks 2>/dev/null || true
 
 echo "==> Plantillas de Nautilus (clic derecho → Nuevo documento)"
 # copias, no enlaces: un documento nuevo no debe quedar enlazado al repo
-TPL=$(xdg-user-dir TEMPLATES 2>/dev/null || echo "$HOME/Templates")
+TPL=$(xdg-user-dir TEMPLATES 2>/dev/null || true)
+# sin carpeta de plantillas configurada, xdg-user-dir responde con el propio $HOME
+[[ -z $TPL || ${TPL%/} == "$HOME" ]] && TPL="$HOME/Templates"
 mkdir -p "$TPL" && cp --update=none "$DOT"/plantillas/* "$TPL"/
 
 echo "==> Fuentes"
@@ -54,7 +56,7 @@ mkdir -p "$HOME/.local/share/fonts/cybersigil"
 cp -n "$DOT"/fonts/*.ttf "$HOME/.local/share/fonts/cybersigil/" && fc-cache -f >/dev/null
 
 echo "==> Extensiones de GNOME (extensions.gnome.org)"
-SHELL_VER=$(gnome-shell --version | grep -oE '[0-9]+' | head -1)
+[[ $(gnome-shell --version) =~ ([0-9]+) ]] && SHELL_VER=${BASH_REMATCH[1]} || SHELL_VER=0
 TMP=$(mktemp -d)
 while read -r uuid; do
   [[ -z $uuid || $uuid == \#* ]] && continue

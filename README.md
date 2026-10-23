@@ -45,6 +45,9 @@ va en `~/.config/cybersigil/local.sh`, que no se sube al repo:
 WEATHER_CITY="Rosario"; WEATHER_REGION="Santa Fe"; WEATHER_LAT=-32.95; WEATHER_LON=-60.65
 ```
 
+La sesión arranca en el escritorio, con los widgets, y no en la vista general. GNOME 51 la abre antes de
+cargar las extensiones; si quedaba abierta, lo primero que se escribía en una ventana nueva iba a su buscador.
+
 Todo se aplica con `cybersigil-apply` y volviendo a iniciar sesión. Los widgets con la misma posición se
 apilan y comparten el ancho.
 
@@ -103,6 +106,7 @@ y botones redondos conservan su forma.
 |---|---|
 | **GRUB** | "Bootmenu" en gótica cromada sobre el sigilo oscurecido, menú en un panel con la línea roja de los widgets y cuenta regresiva que se llena de rojo |
 | **Plymouth** | fondo negro, el sigilo con un resplandor rojo que late, una línea de progreso fina y el nombre del sistema. También pide la clave si el disco está cifrado |
+| **Logo del kernel (UKI)** | si los kernels arrancan como imágenes unificadas con logo, el de la distribución en rojo y blanco (en Arch reemplaza al azul), el mismo de GDM |
 
 `cybersigil-apply` los arma en `~/.config/cybersigil/generated/boot/` (solo cuando cambia la paleta).
 Para instalarlos o actualizarlos:
@@ -116,13 +120,22 @@ Qué hace, con cuidado porque es el arranque:
 
 - La primera vez guarda `/etc/default/grub`, `/boot/grub/grub.cfg` y el tema de Plymouth en
   `/var/lib/cybersigil-boot/`. `--revert` los devuelve.
-- Conserva las opciones del kernel con las que arranca hoy el sistema, aunque no estén en
-  `/etc/default/grub` (por ejemplo, las que deja el instalador directo en `grub.cfg`). Agrega `splash`
-  para que se vea Plymouth.
-- Arma el `grub.cfg` nuevo aparte y solo reemplaza al actual si es válido (`grub-script-check`) y tiene
-  el tema y `splash`. Si algo falla, deja todo como estaba.
+- Respeta cómo arranca Linux el equipo:
+  - **Kernel + initramfs** (lo común): conserva las opciones del kernel con las que arranca hoy,
+    aunque no estén en `/etc/default/grub`, y agrega `splash` para que se vea Plymouth.
+  - **Imágenes unificadas (UKI**, como deja archinstall): GRUB las arranca con el comando `uki` y
+    las opciones del kernel van dentro de cada imagen, desde `/etc/kernel/cmdline`. No toca esas
+    opciones; solo avisa si falta `splash`.
+- Arma el `grub.cfg` nuevo aparte y solo reemplaza al actual si es válido (`grub-script-check`), tiene
+  el tema y arranca Linux igual que el actual. Si algo falla, deja todo como estaba, dice qué faltó y
+  guarda el descartado en `/var/lib/cybersigil-boot/grub.cfg.rechazado`.
+- El menú tiene lugar para 7 entradas (kernels, configuración UEFI y otros sistemas); si hay más,
+  aparece una barra de desplazamiento.
 - Usa la resolución nativa de la pantalla en GRUB y rehace el initramfs (`mkinitcpio -P`) solo si el
   tema de Plymouth cambió.
+- El logo de las UKI: cambia solo la ruta de `--splash` en los presets de `/etc/mkinitcpio.d` (los
+  guarda antes) y rehace las imágenes una sola vez junto con Plymouth. Una imagen rota no impide
+  arrancar: systemd-stub la ignora y sigue.
 - Si el equipo no arranca con GRUB, o Plymouth no está en el initramfs (`HOOKS` de
   `/etc/mkinitcpio.conf`), omite esa parte y avisa.
 
@@ -185,7 +198,7 @@ Cierra sesión y vuelve a entrar. Los archivos que ya existían se mueven a `~/.
 |---|---|---|
 | `base.txt` / `aur-base.txt` | lo que necesita el tema: kitty, starship, fzf, btop, fuentes, iconos, cursor… | a mano |
 | `apps.txt` / `aur-apps.txt` | mis aplicaciones (Brave, VS Code, Docker, Steam…). Opcionales | solas, con `backup.sh` |
-| `exclude.txt` | lo que nunca entra en las listas de apps: kernel, firmware, drivers (los pone `system-tune.sh` según el equipo) y restos de KDE/Hyprland | a mano |
+| `exclude.txt` | lo que nunca entra en las listas de apps: kernel, firmware, drivers (los pone `system-tune.sh` según el equipo) y otros escritorios (Hyprland, restos de KDE) | a mano |
 | `gnome-extensions.txt` | extensiones que descarga `install.sh` | solas, con `backup.sh` |
 
 ## Ajustes de GNOME
@@ -225,6 +238,7 @@ Detecta el hardware y aplica solo lo que corresponde a cada equipo:
 | Sin ahorro de energía del WiFi ni ASPM (evita pérdida de paquetes) | chips MediaTek `mt7921e` (MT7921/7922/7902) o `mt7925e` |
 | `intel-ucode` + `thermald` (control térmico) / `amd-ucode` | según el procesador |
 | `intel-media-driver` + `vulkan-intel` / `vulkan-radeon` | según la gráfica (NVIDIA: solo avisa) |
+| Bluetooth apagado al arrancar (BlueZ `AutoEnable=false`); se prende desde el menú de arriba | si hay Bluetooth |
 | TCP BBR + fq, zram = RAM/2 con sus parámetros de memoria, `rtkit`, limpieza semanal de la caché de pacman | siempre |
 | GDM como gestor de inicio de sesión (necesario para bloquear con Super+L) | si usas otro |
 

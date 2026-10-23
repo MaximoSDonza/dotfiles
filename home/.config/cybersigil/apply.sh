@@ -12,17 +12,25 @@ EXT="$HOME/.local/share/gnome-shell/extensions"
 # reemplazarlo; uninstall.sh lo restaura
 BACKUP="$HOME/.dotfiles-backup/$(date +%F_%H%M%S)"
 protect() {
+  [[ $1 == "$HOME/.config/cybersigil/generated/"* ]] && return 0   # carpeta propia del tema
   [[ -f $1 && ! -L $1 ]] && ! grep -q "Cybersigil" "$1" || return 0
   mkdir -p "$(dirname "$BACKUP/${1#"$HOME"/}")"
   cp -a "$1" "$BACKUP/${1#"$HOME"/}"
   echo "  tu ${1/#"$HOME"/\~} anterior quedó en ${BACKUP/#"$HOME"/\~}"
 }
 
-render() {  # render <plantilla> <destino>
-  mkdir -p "$(dirname "$2")"
-  protect "$2"
-  subst "$1" > "$2"
+# put <destino>: escribe stdin en el archivo solo si cambió. GTK, GNOME (el fondo) y otras apps vigilan
+# estos archivos y los recargan cada vez que se tocan, aunque el contenido sea el mismo
+put() {
+  mkdir -p "$(dirname "$1")"
+  protect "$1"
+  local tmp
+  tmp=$(mktemp)
+  cat > "$tmp"
+  cmp -s "$tmp" "$1" || cat "$tmp" > "$1"
+  rm -f "$tmp"
 }
+render() { subst "$1" | put "$2"; }  # render <plantilla> <destino>
 # Tokens de las plantillas. Cada color existe en tres formatos:
 #   @@X@@ → #8b0a14 · @@X_RGB@@ → 139, 10, 20 (rgba() en CSS) · @@X_ANSI@@ → 139;10;20 (terminal)
 #   @@X_HEX@@ → 8b0a14 (IntelliJ)
@@ -46,14 +54,10 @@ has_icons() { [[ -d /usr/share/icons/$1 || -d $HOME/.local/share/icons/$1 || -d 
 render gnome-shell.css "$HOME/.themes/Cybersigil/gnome-shell/gnome-shell.css"
 render gtk.css "$HOME/.config/gtk-3.0/gtk.css"
 # GTK4 además usa variables CSS (:root), que GTK3 no entiende
-mkdir -p "$HOME/.config/gtk-4.0"
-protect "$HOME/.config/gtk-4.0/gtk.css"
-{ subst gtk.css; subst gtk4-vars.css; } > "$HOME/.config/gtk-4.0/gtk.css"
-render kitty-theme.conf "$HOME/.config/kitty/cybersigil.conf"
+{ subst gtk.css; subst gtk4-vars.css; } | put "$HOME/.config/gtk-4.0/gtk.css"
 # Imagen de fondo de kitty e IntelliJ (APPS_BG_IMAGE): pegada a la derecha sobre el negro, tenue y
 # desvanecida hacia la izquierda, donde está el texto. Se arma solo si cambió la imagen o la opacidad
 FONDO="$HOME/.config/cybersigil/generated/fondo-apps"
-echo "background_opacity $APPS_OPACITY" >> "$HOME/.config/kitty/cybersigil.conf"
 if [[ -n $APPS_BG_IMAGE && -r $APPS_BG_IMAGE ]]; then
   origen=$({ sha1sum < "$APPS_BG_IMAGE"; echo "$APPS_BG_ALPHA $BG"; } | sha1sum | cut -d' ' -f1)
   if [[ $origen != "$(cat "$FONDO.origen" 2>/dev/null)" ]]; then
@@ -84,9 +88,14 @@ for opaco in (True, False):
     s.write_to_png(salida + (".png" if opaco else "-transparente.png"))
 EOF
   fi
-  printf 'background_image %s\nbackground_image_layout cscaled\nbackground_image_linear yes\n' "$FONDO.png" \
-    >> "$HOME/.config/kitty/cybersigil.conf"
 fi
+{
+  subst kitty-theme.conf
+  echo "background_opacity $APPS_OPACITY"
+  if [[ -n $APPS_BG_IMAGE && -f $FONDO.png ]]; then
+    printf 'background_image %s\nbackground_image_layout cscaled\nbackground_image_linear yes\n' "$FONDO.png"
+  fi
+} | put "$HOME/.config/kitty/cybersigil.conf"
 render nvim-colors.lua "$HOME/.config/nvim/colors/cybersigil.lua"
 render starship.toml "$HOME/.config/starship.toml"
 render fastfetch.jsonc "$HOME/.config/fastfetch/config.jsonc"
@@ -95,7 +104,7 @@ CSW="$HOME/.local/share/gnome-shell/extensions/cybersigil-widgets@donza"
 if [[ -d $CSW ]]; then
   render widgets.css "$CSW/stylesheet.css"
   mkdir -p "$HOME/.config/cybersigil/generated"
-  python3 -I - "$HOME/.config/cybersigil/generated/widgets.json" <<'EOF'
+  python3 -I - <<'EOF' | put "$HOME/.config/cybersigil/generated/widgets.json"
 import json, os, sys
 e = os.environ
 widgets = e["WIDGETS"].split()
@@ -105,7 +114,7 @@ json.dump({
     "city": e["WEATHER_CITY"], "region": e["WEATHER_REGION"],
     "latitude": float(e["WEATHER_LAT"]), "longitude": float(e["WEATHER_LON"]),
     "margin": int(e["WIDGET_MARGIN"]), "gap": int(e["WIDGET_GAP"]), "blur": int(e["WIDGET_BLUR"]),
-}, open(sys.argv[1], "w"), ensure_ascii=False, indent=2)
+}, sys.stdout, ensure_ascii=False, indent=2)
 EOF
 fi
 
@@ -195,10 +204,11 @@ EOF
 done
 # Logo de la pantalla de inicio: el de la distribución con sus colores pasados a la paleta (blanco y
 # grises quedan, el resto pasa a rojo). Si no es un SVG no se genera y gdm-theme.sh lo quita
-logo=$(gsettings get org.gnome.login-screen logo 2>/dev/null | tr -d "'")
-rm -f "$G/gdm-logo.svg"
-if [[ $logo == *.svg && -r $logo ]]; then
-  python3 -I - "$logo" "$ACCENT_HI" > "$G/gdm-logo.svg" <<'EOF'
+logo=$(gsettings get org.gnome.login-screen logo 2>/dev/null | tr -d "'" || true)   # sin GDM no existe esa clave
+if [[ $logo != *.svg || ! -r $logo ]]; then
+  rm -f "$G/gdm-logo.svg"
+else
+  python3 -I - "$logo" "$ACCENT_HI" <<'EOF' | put "$G/gdm-logo.svg"
 import colorsys, re, sys
 def color(m):
     h = m.group(2) if len(m.group(2)) == 6 else "".join(c * 2 for c in m.group(2))
@@ -209,20 +219,21 @@ print(re.sub(r"""((?:fill|stroke|stop-color)\s*[=:]\s*["']?)#([0-9a-fA-F]{6}|[0-
 EOF
 fi
 # Arranque (menú de GRUB y Plymouth): lo instala sudo bash boot-theme.sh. Se rehace solo si cambió
-# la paleta o el generador, porque tarda un par de segundos
+# la paleta, el generador o las fuentes que encuentra (tarda un par de segundos)
 if python3 -c 'import cairo, gi' 2>/dev/null; then
-  origen=$({ cat "$DIR/palette.sh" "$DIR"/templates/{boot,wallpaper}.py; command -v grub-mkfont; } | sha1sum | cut -d' ' -f1)
+  origen=$({ cat "$DIR/palette.sh" "$DIR"/templates/{boot,wallpaper}.py; command -v grub-mkfont
+             cat "$G/gdm-logo.svg" 2>/dev/null || true   # el logo de la UKI sale del de GDM
+             for f in UnifrakturMaguntia 'Space Grotesk' 'JetBrainsMono Nerd Font'; do fc-match -f '%{file}\n' "$f"; done
+           } | sha1sum | cut -d' ' -f1)
   if [[ $origen != "$(cat "$G/boot/.origen" 2>/dev/null)" ]]; then
     rm -rf "$G/boot"
-    python3 -I "$DIR/templates/boot.py" "$G/boot" && echo "$origen" > "$G/boot/.origen" &&
+    python3 -I "$DIR/templates/boot.py" "$G/boot" "$G/gdm-logo.svg" && echo "$origen" > "$G/boot/.origen" &&
       echo "  arranque: tema nuevo (instalar: sudo bash ~/.config/cybersigil/boot-theme.sh)"
   fi
 fi
 
 WP="$HOME/.local/share/backgrounds/cybersigil.svg"
-mkdir -p "$(dirname "$WP")"
-protect "$WP"
-python3 "$DIR/templates/wallpaper.py" 3072 1728 > "$WP"
+python3 -I "$DIR/templates/wallpaper.py" 3072 1728 | put "$WP"
 
 # GNOME
 gs() { gsettings set "$@"; }

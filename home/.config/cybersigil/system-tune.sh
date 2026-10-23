@@ -54,8 +54,15 @@ revert() {
         created) rm -f "$arg" && echo "  borrado $arg" ;;
         enabled) systemctl disable --now "$arg" 2>/dev/null && echo "  desactivado $arg" || true ;;
         display-manager)
-          systemctl disable gdm 2>/dev/null || true
-          [[ $arg != none ]] && systemctl enable "$arg" && echo "  vuelve $arg como gestor de inicio de sesión" ;;
+          if [[ $arg == none ]]; then
+            systemctl disable gdm 2>/dev/null || true
+          elif systemctl cat "$arg.service" &>/dev/null; then
+            systemctl disable gdm 2>/dev/null || true
+            systemctl enable "$arg" && echo "  vuelve $arg como gestor de inicio de sesión"
+          else
+            # se desinstaló después: sin GDM el equipo arrancaría sin pantalla de inicio de sesión
+            echo "  $arg ya no está instalado: queda GDM como gestor de inicio de sesión"
+          fi ;;
       esac
     done < <(tac "$ACTIONS")
   fi
@@ -145,13 +152,34 @@ $MARK
 [connection]
 wifi.powersave = 2
 EOF
-  if modinfo -p "$drv" 2>/dev/null | grep -q '^disable_aspm:'; then
+  if grep -q '^disable_aspm:' <<< "$(modinfo -p "$drv" 2>/dev/null)"; then
     write_etc "/etc/modprobe.d/$drv.conf" <<EOF
 $MARK
 options $drv disable_aspm=1
 EOF
   fi
 done
+
+BT_CONF=/etc/bluetooth/main.conf
+if [[ -f $BT_CONF ]]; then
+  echo "==> Bluetooth: arranca apagado (se prende desde el menú de arriba cuando hace falta)"
+  # BlueZ enciende solo los adaptadores que encuentra (AutoEnable=true por defecto). Si al arrancar
+  # el Bluetooth no quedó bloqueado (en notebooks ASUS el firmware guarda su propio estado aparte del
+  # que restaura systemd), arrancaba encendido aunque se hubiera apagado antes de cerrar.
+  # GNOME lo sigue prendiendo bien: su botón desbloquea el adaptador y lo enciende
+  if ! grep -qE '^\s*AutoEnable\s*=\s*false\s*$' "$BT_CONF"; then
+    # (sin comentario en la misma línea: BlueZ lo tomaría como parte del valor)
+    if grep -qE '^\s*#?\s*AutoEnable\s*=' "$BT_CONF"; then
+      nuevo=$(sed -E "0,/^\s*#?\s*AutoEnable\s*=.*/s||$MARK\nAutoEnable=false|" "$BT_CONF")
+    elif grep -q '^\[Policy\]' "$BT_CONF"; then
+      nuevo=$(sed "/^\[Policy\]/a $MARK\nAutoEnable=false" "$BT_CONF")
+    else
+      nuevo=$(cat "$BT_CONF"; printf '\n[Policy]\n%s\nAutoEnable=false\n' "$MARK")
+    fi
+    # se arma aparte: write_etc vacía el archivo antes de escribir
+    printf '%s\n' "$nuevo" | write_etc "$BT_CONF"
+  fi
+fi
 
 echo "==> Red: TCP BBR + fq (mejor rendimiento en enlaces con pérdida, como el WiFi)"
 echo "==> Memoria: parámetros recomendados para swap en zram"

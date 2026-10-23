@@ -14,9 +14,10 @@
 ^(intel-media-driver|libva-intel-driver|vulkan-intel|vulkan-radeon|thermald|nvidia.*)$
 ^(wireless-regdb|iw|rtkit|pacman-contrib|zram-generator)$
 
-# Restos de KDE y Hyprland: este setup es GNOME y no los necesita
+# Otros escritorios que puedan convivir en el equipo (Hyprland, restos de KDE): este repo es solo
+# para GNOME, así que no entran en las listas de apps
 ^(sddm|dolphin|baloo.*|kwindowsystem|kio.*|plasma-.*|polkit-kde-agent|dunst)$
-^(hyprland.*|xdg-desktop-portal-hyprland|uwsm|wofi|grim|slurp|network-manager-applet)$
+^(hyprland.*|hypr.*|xdg-desktop-portal-hyprland|uwsm|wofi|grim|slurp|network-manager-applet|brightnessctl|playerctl)$
 
 # AUR: el propio yay y los paquetes de depuración
 ^yay(-bin)?$

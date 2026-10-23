@@ -3,6 +3,7 @@ discord
 docker
 docker-buildx
 docker-compose
+dosfstools
 firefox
 github-cli
 gradle
@@ -12,6 +13,7 @@ libreoffice-fresh
 maven
 mpv
 nano
+neovim
 nodejs
 npm
 obs-studio

@@ -42,6 +42,9 @@ const DEFAULTS = {
     blur: 24,
 };
 
+// La sesión arranca en el escritorio, no en la vista general (una sola vez por sesión de la shell)
+let startupHandled = false;
+
 // ventanas que pueden tapar a un widget (no el escritorio ni menús emergentes)
 const COVERING_TYPES = [Meta.WindowType.NORMAL, Meta.WindowType.DIALOG, Meta.WindowType.MODAL_DIALOG, Meta.WindowType.UTILITY];
 
@@ -118,6 +121,18 @@ export default class CybersigilWidgets extends Extension {
         ];
         for (const actor of global.get_window_actors())
             this._trackWindow(actor.meta_window);
+
+        // GNOME 51 abre la vista general (con el foco en su buscador) antes de activar las
+        // extensiones, así que la opción de Just Perfection para arrancar en el escritorio llega
+        // tarde. Sin esto, la primera ventana abierta con un atajo (Ctrl+Alt+T → kitty) queda detrás
+        // de la vista general y lo que se escribe va al buscador
+        if (!startupHandled && Main.layoutManager._startingUp) {
+            startupHandled = true;
+            this._signals.push([Main.layoutManager, Main.layoutManager.connect('startup-complete', () => {
+                if (Main.overview.visible)
+                    Main.overview.hide();
+            })]);
+        }
 
         this._raise();
         this._place();

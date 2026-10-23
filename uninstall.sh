@@ -59,7 +59,7 @@ for d in "$HOME/.themes/Cybersigil" "$HOME/.config/cybersigil/generated"; do
 done
 
 echo "==> Temas de VS Code e IntelliJ"
-if command -v code >/dev/null && code --list-extensions 2>/dev/null | grep -qx cybersigil.cybersigil-theme; then
+if command -v code >/dev/null && grep -qx cybersigil.cybersigil-theme <<< "$(code --list-extensions 2>/dev/null)"; then
   code --uninstall-extension cybersigil.cybersigil-theme >/dev/null 2>&1 && say "VS Code: cybersigil.cybersigil-theme"
 fi
 for j in "$HOME"/.local/share/JetBrains/*/cybersigil-theme.jar; do
@@ -78,8 +78,10 @@ for b in $(find "$BACKUPS" -mindepth 1 -maxdepth 1 -type d ! -name 'antes-de-des
 done
 
 echo "==> Plantillas, fuentes y carpetas vacías"
+TPL=$(xdg-user-dir TEMPLATES 2>/dev/null || true)
+[[ -z $TPL || ${TPL%/} == "$HOME" ]] && TPL="$HOME/Templates"   # igual que install.sh
 for f in "$DOT"/plantillas/*; do
-  t="$(xdg-user-dir TEMPLATES 2>/dev/null || echo "$HOME/Templates")/$(basename "$f")"
+  t="$TPL/$(basename "$f")"
   [[ -f $t ]] && cmp -s "$f" "$t" && rm "$t" && say "$t"
 done
 if [[ -d $HOME/.local/share/fonts/cybersigil ]]; then
@@ -117,6 +119,10 @@ for k in picture-uri picture-uri-dark picture-options primary-color; do
   gsettings reset org.gnome.desktop.background "$k"
 done
 gsettings reset org.gnome.desktop.screensaver picture-uri
+# "Abrir en terminal" de Nautilus (si la extensión está instalada)
+for k in terminal new-tab; do
+  gsettings reset com.github.stunkymonkey.nautilus-open-any-terminal "$k" 2>/dev/null || true
+done
 # optimizaciones de dconf/tema.ini (lib/dconf_sync.py)
 gsettings reset org.freedesktop.Tracker3.Miner.Files index-on-battery 2>/dev/null || true
 gsettings reset org.gnome.mutter.experimental autoclose-xwayland 2>/dev/null || true

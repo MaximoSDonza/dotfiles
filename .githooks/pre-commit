@@ -10,9 +10,13 @@ while IFS= read -r -d '' f; do
     *.npmrc|*.bashrc.local|*local.sh|*hosts.yml|*.env|*.pem|*.key|*id_rsa*|*id_ed25519*)
       echo "✗ archivo privado en el commit: $f"; fail=1; continue ;;
   esac
-  if git diff --cached -U0 -- "$f" | grep -E '^\+' | grep -qiE "$patterns"; then
+  # primero las líneas agregadas y después la búsqueda: con "git diff | grep -q" y pipefail, en un
+  # archivo grande grep -q corta el pipe al encontrar el secreto y el if lo tomaba como "no hay"
+  added=$(git diff --cached -U0 -- "$f" | grep -E '^\+' || true)
+  hits=$(grep -iE "$patterns" <<< "$added" || true)
+  if [[ -n $hits ]]; then
     echo "✗ posible secreto en: $f"
-    git diff --cached -U0 -- "$f" | grep -E '^\+' | grep -iE "$patterns" | cut -c1-120 | sed 's/^/    /'
+    cut -c1-120 <<< "$hits" | head -5 | sed 's/^/    /'
     fail=1
   fi
 done < <(git diff --cached --name-only -z --diff-filter=ACM)
