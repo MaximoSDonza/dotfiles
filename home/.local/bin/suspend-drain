@@ -1,48 +1,90 @@
 #!/usr/bin/env python3
 """Mide cuánta batería gasta la laptop suspendida.
 
-Uso: suspend-drain   (suspende el equipo; despertalo cuando quieras)
-Para un resultado confiable, dejala suspendida 30 minutos o más, sin el cargador.
+Uso: suspend-drain   (suspende el equipo; despiértalo cuando quieras)
+Para un resultado confiable, déjala suspendida 30 minutos o más, sin el cargador.
 """
 import os
 import subprocess
 import sys
 import time
 
-BAT = "/sys/class/power_supply/BAT0/"
+S0IX = "/sys/devices/system/cpu/cpuidle/low_power_idle_system_residency_us"
 
 
-def read(name):
-    with open(BAT + name) as f:
-        return f.read().strip()
+def battery():
+    """La batería de la laptop (no la de un mouse o unos auriculares)."""
+    base = "/sys/class/power_supply"
+    for name in sorted(os.listdir(base)):
+        d = f"{base}/{name}"
+        if read(d, "type") == "Battery" and read(d, "scope") != "Device":
+            return d
+    return None
 
 
-if read("status") != "Discharging":
-    sys.exit("Desenchufa el cargador: con el cargador conectado la medición no sirve.")
+def read(d, name):
+    try:
+        with open(f"{d}/{name}") as f:
+            return f.read().strip()
+    except OSError:
+        return None
 
-full = int(read("energy_full"))  # µWh
-mode = open("/sys/power/mem_sleep").read().split("[")[1].split("]")[0]
-s0ix_file = "/sys/devices/system/cpu/cpuidle/low_power_idle_system_residency_us"
-s0ix0 = int(open(s0ix_file).read()) if os.path.exists(s0ix_file) else None
 
-e0 = int(read("energy_now"))
-real0, mono0 = time.time(), time.monotonic()
-print(f"Batería: {e0 / full:.0%} · modo de suspensión: {mode}. Suspendiendo…")
-subprocess.run(["systemctl", "suspend"], check=True)
+def energy(d, what):
+    """Energía en µWh: energy_* directo, o charge_* (µAh) por el voltaje de diseño."""
+    e = read(d, f"energy_{what}")
+    if e is not None:
+        return int(e)
+    return int(read(d, f"charge_{what}")) * int(read(d, "voltage_min_design")) // 1_000_000
 
-# El reloj real avanza durante la suspensión; el monotónico no. Así se detecta el regreso.
-while (time.time() - real0) - (time.monotonic() - mono0) < 10:
-    time.sleep(1)
-slept = (time.time() - real0) - (time.monotonic() - mono0)
-e1 = int(read("energy_now"))
 
-used_mwh = (e0 - e1) / 1000
-hours = slept / 3600
-print(f"\nSuspendida: {slept / 60:.1f} min")
-print(f"Gastó: {used_mwh:.0f} mWh → {used_mwh / hours:.0f} mW promedio "
-      f"({(e0 - e1) / full / hours:.1%} de la batería por hora)")
-if s0ix0 is not None:
-    s0ix = (int(open(s0ix_file).read()) - s0ix0) / 1e6
-    print(f"Reposo profundo de la plataforma (S0ix): {s0ix:.0f} s de {slept:.0f} s")
-if slept < 25 * 60:
-    print("Aviso: con menos de 30 min la medición es imprecisa (la batería actualiza su lectura cada tanto).")
+def slept_since(boot0, mono0):
+    """Segundos suspendido desde el inicio: el reloj de arranque sigue durante la suspensión y el
+    monotónico no."""
+    return (time.clock_gettime(time.CLOCK_BOOTTIME) - boot0) - (time.monotonic() - mono0)
+
+
+def wait_for_wake(boot0, mono0, start_timeout=60):
+    """Espera a que el equipo se suspenda y vuelva. systemctl suspend vuelve enseguida y la suspensión
+    empieza un instante después; si no empieza (algo la impide), no se queda esperando para siempre."""
+    limit = time.monotonic() + start_timeout
+    while slept_since(boot0, mono0) < 2:
+        if time.monotonic() > limit:
+            return None
+        time.sleep(0.5)
+    return slept_since(boot0, mono0)
+
+
+def main():
+    bat = battery()
+    if not bat:
+        sys.exit("No encontré la batería de la laptop.")
+    if read(bat, "status") != "Discharging":
+        sys.exit("Desenchufa el cargador: con el cargador conectado la medición no sirve.")
+    full = energy(bat, "full")
+    mode = open("/sys/power/mem_sleep").read().split("[")[1].split("]")[0]
+    s0ix0 = int(open(S0IX).read()) if os.path.exists(S0IX) else None
+
+    e0 = energy(bat, "now")
+    boot0, mono0 = time.clock_gettime(time.CLOCK_BOOTTIME), time.monotonic()
+    print(f"Batería: {e0 / full:.0%} · modo de suspensión: {mode}. Suspendiendo…")
+    subprocess.run(["systemctl", "suspend"], check=True)
+    slept = wait_for_wake(boot0, mono0)
+    if slept is None:
+        sys.exit("El equipo no se suspendió. Para ver qué lo impide: systemd-inhibit --list")
+    e1 = energy(bat, "now")
+
+    used_mwh = (e0 - e1) / 1000
+    hours = slept / 3600
+    print(f"\nSuspendida: {slept / 60:.1f} min")
+    print(f"Gastó: {used_mwh:.0f} mWh → {used_mwh / hours:.0f} mW promedio "
+          f"({(e0 - e1) / full / hours:.1%} de la batería por hora)")
+    if s0ix0 is not None:
+        s0ix = (int(open(S0IX).read()) - s0ix0) / 1e6
+        print(f"Reposo profundo de la plataforma (S0ix): {s0ix:.0f} s de {slept:.0f} s")
+    if slept < 25 * 60:
+        print("Aviso: con menos de 30 min la medición es imprecisa (la batería actualiza su lectura cada tanto).")
+
+
+if __name__ == "__main__":
+    main()
